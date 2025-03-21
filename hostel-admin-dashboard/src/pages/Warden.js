@@ -4,12 +4,15 @@ import { collection, getDocs, doc, updateDoc, query, orderBy, where } from 'fire
 import { db } from '../services/firebase';
 import Navbar from '../components/common/Navbar';
 import LeaveRequestCard from '../components/warden/LeaveRequestCard';
+import SwapRequestCard from '../components/warden/SwapRequestCard';
 import { useAuth } from '../contexts/AuthContext';
 
 const Warden = () => {
   const { currentUser } = useAuth();
   const [leaveRequests, setLeaveRequests] = useState([]);
+  const [swapRequests, setSwapRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [swapLoading, setSwapLoading] = useState(true);
   const [filter, setFilter] = useState('pending'); // 'all', 'pending', 'approved', 'rejected'
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
@@ -46,9 +49,37 @@ const Warden = () => {
     }
   };
 
-  useEffect(() => {
-    fetchLeaveRequests();
-  }, [filter]);
+  const fetchSwapRequests = async () => {
+    setSwapLoading(true);
+    try {
+      let swapRequestsQuery;
+
+      if (filter === 'all') {
+        swapRequestsQuery = query(
+          collection(db, 'roomSwapRequests'),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        swapRequestsQuery = query(
+          collection(db, 'roomSwapRequests'),
+          where('status', '==', filter),
+          orderBy('createdAt', 'desc')
+        );
+      }
+
+      const querySnapshot = await getDocs(swapRequestsQuery);
+      const requests = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+
+      setSwapRequests(requests);
+    } catch (error) {
+      console.error('Error fetching swap requests:', error);
+    } finally {
+      setSwapLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Set the filter based on active tab
@@ -65,10 +96,25 @@ const Warden = () => {
       case 'all':
         setFilter('all');
         break;
+      case 'swaps':
+        fetchSwapRequests();
+        break;
       default:
         setFilter('pending');
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'swaps') {
+      fetchLeaveRequests();
+    }
+  }, [filter, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'swaps') {
+      fetchSwapRequests();
+    }
+  }, [filter, activeTab]);
 
   const handleApprove = async (id, validTillDate) => {
     try {
@@ -132,8 +178,81 @@ const Warden = () => {
     }
   };
 
+  const handleApproveSwap = async (id) => {
+    try {
+      const requestRef = doc(db, 'roomSwapRequests', id);
+      await updateDoc(requestRef, {
+        status: 'approved',
+        approvedBy: currentUser.displayName || currentUser.email,
+        approvedById: currentUser.uid,
+        approvedAt: new Date()
+      });
+      
+      // Update the local state
+      setSwapRequests(prevRequests => 
+        prevRequests.map(request => 
+          request.id === id 
+            ? { 
+                ...request, 
+                status: 'approved',
+                approvedBy: currentUser.displayName || currentUser.email,
+                approvedById: currentUser.uid,
+                approvedAt: new Date()
+              } 
+            : request
+        )
+      );
+    } catch (error) {
+      console.error('Error approving swap request:', error);
+    }
+  };
+
+  const handleRejectSwap = async (id, rejectionReason) => {
+    try {
+      const requestRef = doc(db, 'roomSwapRequests', id);
+      await updateDoc(requestRef, {
+        status: 'rejected',
+        rejectedBy: currentUser.displayName || currentUser.email,
+        rejectedById: currentUser.uid,
+        rejectedAt: new Date(),
+        rejectionReason: rejectionReason || 'No reason provided'
+      });
+      
+      // Update the local state
+      setSwapRequests(prevRequests => 
+        prevRequests.map(request => 
+          request.id === id 
+            ? { 
+                ...request, 
+                status: 'rejected',
+                rejectedBy: currentUser.displayName || currentUser.email,
+                rejectedById: currentUser.uid,
+                rejectedAt: new Date(),
+                rejectionReason: rejectionReason || 'No reason provided'
+              } 
+            : request
+        )
+      );
+    } catch (error) {
+      console.error('Error rejecting swap request:', error);
+    }
+  };
+
   // Filter by search term
   const filteredRequests = leaveRequests.filter(request => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (request.studentName && request.studentName.toLowerCase().includes(searchLower)) ||
+      (request.regNumber && request.regNumber.toLowerCase().includes(searchLower)) ||
+      (request.roomNumber && request.roomNumber.toString().includes(searchLower)) ||
+      (request.reason && request.reason.toLowerCase().includes(searchLower))
+    );
+  });
+
+  // Filter room swap requests by search term
+  const filteredSwapRequests = swapRequests.filter(request => {
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
@@ -149,6 +268,7 @@ const Warden = () => {
   const pendingCount = leaveRequests.filter(req => req.status === 'pending').length;
   const approvedCount = leaveRequests.filter(req => req.status === 'approved').length;
   const rejectedCount = leaveRequests.filter(req => req.status === 'rejected').length;
+  const pendingSwapsCount = swapRequests.filter(req => req.status === 'pending').length;
 
   return (
     <div className="page-container fade-in">
@@ -294,6 +414,17 @@ const Warden = () => {
                 }
               />
               <Tab eventKey="all" title="All Requests" />
+              <Tab 
+                eventKey="swaps" 
+                title={
+                  <div className="d-flex align-items-center">
+                    <span>Room Swaps</span>
+                    {pendingSwapsCount > 0 && (
+                      <Badge bg="warning" className="ms-2 rounded-pill">{pendingSwapsCount}</Badge>
+                    )}
+                  </div>
+                }
+              />
             </Tabs>
           </Card.Header>
           <Card.Body className="p-3">
@@ -309,62 +440,120 @@ const Warden = () => {
           </Card.Body>
         </Card>
         
-        {loading ? (
-          <div className="loading-container">
-            <div className="spinner"></div>
-            <p className="loading-text">Loading leave requests...</p>
-          </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-            </div>
-            <h3 className="fs-5 mt-3">No leave requests found</h3>
-            <p className="empty-state-text">
-              {searchTerm 
-                ? 'Try a different search term to see more results.' 
-                : `There are no ${filter !== 'all' ? filter : ''} leave requests at the moment.`}
-            </p>
-            {searchTerm && (
-              <Button 
-                variant="outline-secondary" 
-                size="sm"
-                onClick={() => setSearchTerm('')}
-                className="mt-2"
-              >
-                Clear Search
-              </Button>
+        {activeTab !== 'swaps' ? (
+          <>
+            {loading ? (
+              <div className="loading-container">
+                <div className="spinner"></div>
+                <p className="loading-text">Loading leave requests...</p>
+              </div>
+            ) : filteredRequests.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </div>
+                <h3 className="fs-5 mt-3">No leave requests found</h3>
+                <p className="empty-state-text">
+                  {searchTerm 
+                    ? 'Try a different search term to see more results.' 
+                    : `There are no ${filter !== 'all' ? filter : ''} leave requests at the moment.`}
+                </p>
+                {searchTerm && (
+                  <Button 
+                    variant="outline-secondary" 
+                    size="sm"
+                    onClick={() => setSearchTerm('')}
+                    className="mt-2"
+                  >
+                    Clear Search
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="mb-2 text-muted small">
+                Showing {filteredRequests.length} {activeTab !== 'all' ? activeTab : ''} leave requests
+              </div>
             )}
-          </div>
+            
+            {!loading && filteredRequests.map(request => (
+              <LeaveRequestCard
+                key={request.id}
+                request={request}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
+            ))}
+          </>
         ) : (
-          <div className="mb-2 text-muted small">
-            Showing {filteredRequests.length} {activeTab !== 'all' ? activeTab : ''} leave requests
-          </div>
+          <>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h2 className="fs-5 fw-semibold mb-0">Room Swap Requests</h2>
+              <Badge bg={pendingSwapsCount > 0 ? "warning" : "success"} className="badge-pill py-2 px-3">
+                {pendingSwapsCount} Pending
+              </Badge>
+            </div>
+            
+            {swapLoading ? (
+              <div className="loading-container">
+                <div className="spinner"></div>
+                <p className="loading-text">Loading room swap requests...</p>
+              </div>
+            ) : filteredSwapRequests.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                    <path d="M18 12H6"></path>
+                    <path d="M15 15l-3-3 3-3"></path>
+                    <path d="M9 9l-3 3 3 3"></path>
+                  </svg>
+                </div>
+                <h3 className="fs-5 mt-3">No room swap requests found</h3>
+                <p className="empty-state-text">
+                  {filter !== 'all' ? `There are no ${filter} room swap requests at the moment.` : 'There are no room swap requests in the system.'}
+                </p>
+              </div>
+            ) : (
+              <div className="mb-2 text-muted small">
+                Showing {filteredSwapRequests.length} {filter !== 'all' ? filter : ''} room swap requests
+              </div>
+            )}
+            
+            {!swapLoading && filteredSwapRequests.map(request => (
+              <SwapRequestCard
+                key={request.id}
+                request={request}
+                onApprove={handleApproveSwap}
+                onReject={handleRejectSwap}
+              />
+            ))}
+          </>
         )}
-        
-        {!loading && filteredRequests.map(request => (
-          <LeaveRequestCard
-            key={request.id}
-            request={request}
-            onApprove={handleApprove}
-            onReject={handleReject}
-          />
-        ))}
       </Container>
     </div>
   );

@@ -162,6 +162,36 @@ const AppNavbar = () => {
                       My Leave Requests
                     </NavDropdown.Item>
                   </NavDropdown>
+                  
+                  <NavDropdown 
+                    title={
+                      <span>
+                        <i className="bi bi-arrow-left-right me-1"></i> Room Swap
+                      </span>
+                    } 
+                    id="swap-dropdown"
+                    active={isActive('/room-swap-request') || isActive('/my-swaps')}
+                  >
+                    <NavDropdown.Item 
+                      as={Link} 
+                      to="/room-swap-request"
+                      onClick={closeNavbar}
+                      active={isActive('/room-swap-request')}
+                    >
+                      <i className="bi bi-plus-circle me-2"></i>
+                      Request Swap
+                    </NavDropdown.Item>
+                    
+                    <NavDropdown.Item 
+                      as={Link} 
+                      to="/my-swaps"
+                      onClick={closeNavbar}
+                      active={isActive('/my-swaps')}
+                    >
+                      <i className="bi bi-list-check me-2"></i>
+                      My Swap Requests
+                    </NavDropdown.Item>
+                  </NavDropdown>
                 </>
               )}
             </Nav>

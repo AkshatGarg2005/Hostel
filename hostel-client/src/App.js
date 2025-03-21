@@ -12,6 +12,8 @@ import MessMenu from './pages/MessMenu';
 import MessComplaint from './pages/MessComplaint';
 import LeaveRequest from './pages/LeaveRequest';
 import MyLeaves from './pages/MyLeaves';
+import RoomSwapRequest from './pages/RoomSwapRequest';
+import MySwaps from './pages/MySwaps';
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -72,6 +74,16 @@ function AppRoutes() {
         <Route path="/my-leaves" element={
           <ProtectedRoute>
             <MyLeaves />
+          </ProtectedRoute>
+        } />
+        <Route path="/room-swap-request" element={
+          <ProtectedRoute>
+            <RoomSwapRequest />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-swaps" element={
+          <ProtectedRoute>
+            <MySwaps />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" />} />
