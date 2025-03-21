@@ -4,6 +4,7 @@ import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/common/Navbar';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 
 const MessComplaint = () => {
   const { currentUser, userDetails } = useAuth();
@@ -72,94 +73,169 @@ const MessComplaint = () => {
     }
   };
 
+  const getCategoryIcon = (category) => {
+    switch(category) {
+      case 'food_quality':
+        return 'bi-egg-fried';
+      case 'food_quantity':
+        return 'bi-cup-hot';
+      case 'menu_variety':
+        return 'bi-calendar3';
+      case 'cleanliness':
+        return 'bi-droplet';
+      case 'service':
+        return 'bi-person';
+      case 'other':
+        return 'bi-three-dots';
+      default:
+        return 'bi-question-circle';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-vh-100 bg-light">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Submit Mess Complaint
-        </h1>
+      <Container className="py-4">
+        <div className="d-flex align-items-center mb-4">
+          <div className="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+            <i className="bi bi-chat-square-text text-warning fs-4"></i>
+          </div>
+          <h1 className="mb-0">Submit Mess Complaint</h1>
+        </div>
         
-        <div className="bg-white shadow rounded-lg p-6">
-          {error && (
-            <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          
-          {success && (
-            <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{success}</span>
-            </div>
-          )}
-          
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                  Complaint Category
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                >
-                  <option value="food_quality">Food Quality</option>
-                  <option value="food_quantity">Food Quantity</option>
-                  <option value="menu_variety">Menu Variety</option>
-                  <option value="cleanliness">Cleanliness</option>
-                  <option value="service">Service</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+        <Card className="border-0 shadow-sm">
+          <Card.Body className="p-4">
+            {error && (
+              <Alert variant="danger" className="d-flex align-items-center">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>{error}</div>
+              </Alert>
+            )}
+            
+            {success && (
+              <Alert variant="success" className="d-flex align-items-center">
+                <i className="bi bi-check-circle-fill me-2"></i>
+                <div>{success}</div>
+              </Alert>
+            )}
+            
+            <Form onSubmit={handleSubmit}>
+              <Row className="mb-4">
+                <Col lg={6} className="mb-4 mb-lg-0">
+                  <Card className="h-100 border-0 shadow-sm bg-light">
+                    <Card.Body className="p-3">
+                      <h5 className="mb-3">
+                        <i className="bi bi-tag me-2"></i>
+                        Complaint Category
+                      </h5>
+                      
+                      <Form.Group>
+                        <div className="row g-3">
+                          {['food_quality', 'food_quantity', 'menu_variety', 'cleanliness', 'service', 'other'].map((category) => (
+                            <div className="col-md-6" key={category}>
+                              <Card 
+                                className={`border-0 ${formData.category === category ? 'bg-primary bg-opacity-10' : 'bg-white'} h-100 cursor-pointer`}
+                                onClick={() => setFormData({...formData, category})}
+                                style={{cursor: 'pointer'}}
+                              >
+                                <Card.Body className="p-3 d-flex align-items-center">
+                                  <div className="form-check d-flex">
+                                    <Form.Check 
+                                      type="radio"
+                                      id={`category-${category}`}
+                                      name="category"
+                                      checked={formData.category === category}
+                                      onChange={() => setFormData({...formData, category})}
+                                      className="me-2"
+                                    />
+                                    <label 
+                                      htmlFor={`category-${category}`} 
+                                      className="form-check-label d-flex align-items-center"
+                                    >
+                                      <i className={`bi ${getCategoryIcon(category)} me-2`}></i>
+                                      <span className="text-capitalize">
+                                        {category.replace('_', ' ')}
+                                      </span>
+                                    </label>
+                                  </div>
+                                </Card.Body>
+                              </Card>
+                            </div>
+                          ))}
+                        </div>
+                      </Form.Group>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                
+                <Col lg={6}>
+                  <Card className="h-100 border-0 shadow-sm bg-light">
+                    <Card.Body className="p-3">
+                      <h5 className="mb-3">
+                        <i className="bi bi-info-circle me-2"></i>
+                        Complaint Details
+                      </h5>
+                      
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">Room Number</Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="roomNumber"
+                          value={formData.roomNumber}
+                          onChange={handleChange}
+                          required
+                          className="shadow-sm"
+                          placeholder="Your room number"
+                        />
+                      </Form.Group>
+                      
+                      <Form.Group>
+                        <Form.Label className="fw-bold">Complaint Description</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          name="description"
+                          rows="5"
+                          value={formData.description}
+                          onChange={handleChange}
+                          required
+                          className="shadow-sm"
+                          placeholder="Please describe your complaint in detail"
+                        />
+                        <Form.Text className="text-muted">
+                          Be specific about the issue for faster resolution
+                        </Form.Text>
+                      </Form.Group>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
               
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Complaint Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows="4"
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Please describe your complaint in detail"
-                ></textarea>
-              </div>
-              
-              <div>
-                <label htmlFor="roomNumber" className="block text-sm font-medium text-gray-700">
-                  Room Number
-                </label>
-                <input
-                  id="roomNumber"
-                  name="roomNumber"
-                  type="text"
-                  value={formData.roomNumber}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-              
-              <div>
-                <button
+              <div className="d-grid gap-2">
+                <Button 
+                  variant="warning" 
                   type="submit"
                   disabled={loading}
-                  className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    loading ? 'opacity-70 cursor-not-allowed' : ''
-                  }`}
+                  size="lg"
+                  className="shadow-sm text-dark"
                 >
-                  {loading ? 'Submitting...' : 'Submit Complaint'}
-                </button>
+                  {loading ? (
+                    <div className="d-flex align-items-center justify-content-center">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span>Processing...</span>
+                    </div>
+                  ) : (
+                    <div className="d-flex align-items-center justify-content-center">
+                      <i className="bi bi-send me-2"></i>
+                      <span>Submit Complaint</span>
+                    </div>
+                  )}
+                </Button>
               </div>
-            </div>
-          </form>
-        </div>
-      </div>
+            </Form>
+          </Card.Body>
+        </Card>
+      </Container>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Nav, Button, Badge, Form } from 'react-bootstrap';
 import { collection, getDocs, doc, deleteDoc, updateDoc, query, orderBy, where, addDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import Navbar from '../components/common/Navbar';
@@ -10,14 +11,25 @@ const MessManager = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('complaints'); // 'complaints' or 'menu'
   const [menuType, setMenuType] = useState('weekly'); // 'daily' or 'weekly'
+  const [complaintsFilter, setComplaintsFilter] = useState('all'); // 'all', 'pending', 'resolved'
 
   const fetchComplaints = async () => {
     setLoading(true);
     try {
-      const complaintsQuery = query(
-        collection(db, 'messComplaints'),
-        orderBy('createdAt', 'desc')
-      );
+      let complaintsQuery;
+      
+      if (complaintsFilter === 'all') {
+        complaintsQuery = query(
+          collection(db, 'messComplaints'),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        complaintsQuery = query(
+          collection(db, 'messComplaints'),
+          where('status', '==', complaintsFilter),
+          orderBy('createdAt', 'desc')
+        );
+      }
       
       const querySnapshot = await getDocs(complaintsQuery);
       const complaintsData = querySnapshot.docs.map(doc => ({
@@ -39,7 +51,7 @@ const MessManager = () => {
     } else {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, complaintsFilter]);
 
   const handleResolve = async (id) => {
     try {
@@ -89,62 +101,102 @@ const MessManager = () => {
         updatedAt: new Date()
       });
       
-      alert('Menu updated successfully!');
+      return true;
     } catch (error) {
       console.error('Error updating menu:', error);
-      alert('Failed to update menu. Please try again.');
+      throw error;
     }
   };
 
+  // Count pending complaints
+  const pendingCount = complaints.filter(complaint => complaint.status === 'pending').length;
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="page-container fade-in">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Mess Manager
-        </h1>
-        
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex" aria-label="Tabs">
-              <button
-                onClick={() => setActiveTab('complaints')}
-                className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                  activeTab === 'complaints'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Complaints
-              </button>
-              <button
-                onClick={() => setActiveTab('menu')}
-                className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                  activeTab === 'menu'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Menu Management
-              </button>
-            </nav>
-          </div>
+      <Container className="py-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="fs-4 fw-bold mb-0">Mess Management</h1>
         </div>
         
-        {loading ? (
-          <div className="text-center py-10">
-            <div className="spinner"></div>
-            <p className="mt-3 text-gray-600">Loading...</p>
-          </div>
-        ) : activeTab === 'complaints' ? (
+        <Card className="shadow-sm border-0 mb-4">
+          <Card.Header className="bg-white border-bottom">
+            <Nav variant="tabs" className="border-0">
+              <Nav.Item>
+                <Nav.Link 
+                  active={activeTab === 'complaints'}
+                  onClick={() => setActiveTab('complaints')}
+                  className={`px-3 py-2 ${activeTab === 'complaints' ? 'fw-semibold' : ''}`}
+                >
+                  Complaints
+                  {pendingCount > 0 && (
+                    <Badge bg="danger" className="ms-2 rounded-pill">{pendingCount}</Badge>
+                  )}
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  active={activeTab === 'menu'} 
+                  onClick={() => setActiveTab('menu')}
+                  className={`px-3 py-2 ${activeTab === 'menu' ? 'fw-semibold' : ''}`}
+                >
+                  Menu Management
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Card.Header>
+        </Card>
+        
+        {activeTab === 'complaints' ? (
           <>
-            {complaints.length === 0 ? (
-              <div className="bg-white shadow rounded-lg p-6 text-center">
-                <p className="text-gray-500">No complaints found</p>
+            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
+              <h2 className="fs-5 fw-semibold mb-3 mb-sm-0">Mess Complaints</h2>
+              <Form.Select 
+                size="sm" 
+                style={{ width: 'auto' }}
+                value={complaintsFilter}
+                onChange={(e) => setComplaintsFilter(e.target.value)}
+              >
+                <option value="all">All Complaints</option>
+                <option value="pending">Pending Only</option>
+                <option value="resolved">Resolved Only</option>
+              </Form.Select>
+            </div>
+            
+            {loading ? (
+              <div className="loading-container">
+                <div className="spinner"></div>
+                <p className="loading-text">Loading complaints...</p>
+              </div>
+            ) : complaints.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                  </svg>
+                </div>
+                <h3 className="fs-5 mt-3">No complaints found</h3>
+                <p className="empty-state-text">
+                  {complaintsFilter === 'all' 
+                    ? 'There are no mess complaints in the system.' 
+                    : `No ${complaintsFilter} complaints found.`}
+                </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
+              <div>
                 {complaints.map(complaint => (
                   <ComplaintCard
                     key={complaint.id}
@@ -157,44 +209,42 @@ const MessManager = () => {
             )}
           </>
         ) : (
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="mb-4">
-              <div className="flex items-center justify-start space-x-4 mb-6">
-                <span className="text-sm font-medium text-gray-700">Menu Type:</span>
-                <div className="flex items-center space-x-4">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      className="form-radio"
-                      name="menuType"
-                      value="daily"
-                      checked={menuType === 'daily'}
-                      onChange={() => setMenuType('daily')}
-                    />
-                    <span className="ml-2">Daily Menu</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      className="form-radio"
-                      name="menuType"
-                      value="weekly"
-                      checked={menuType === 'weekly'}
-                      onChange={() => setMenuType('weekly')}
-                    />
-                    <span className="ml-2">Weekly Menu</span>
-                  </label>
+          <>
+            <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-4">
+              <h2 className="fs-5 fw-semibold mb-3 mb-sm-0">Menu Management</h2>
+              <div className="d-flex align-items-center">
+                <div className="btn-group" role="group">
+                  <Button 
+                    variant={menuType === 'daily' ? 'primary' : 'outline-primary'} 
+                    onClick={() => setMenuType('daily')}
+                    size="sm"
+                    className="px-3"
+                  >
+                    Daily
+                  </Button>
+                  <Button 
+                    variant={menuType === 'weekly' ? 'primary' : 'outline-primary'} 
+                    onClick={() => setMenuType('weekly')}
+                    size="sm"
+                    className="px-3"
+                  >
+                    Weekly
+                  </Button>
                 </div>
               </div>
-              
-              <MenuForm 
-                type={menuType} 
-                onSubmit={handleMenuSubmit} 
-              />
             </div>
-          </div>
+            
+            <Card className="shadow-sm border-0">
+              <Card.Body className="p-4">
+                <MenuForm 
+                  type={menuType} 
+                  onSubmit={handleMenuSubmit} 
+                />
+              </Card.Body>
+            </Card>
+          </>
         )}
-      </div>
+      </Container>
     </div>
   );
 };

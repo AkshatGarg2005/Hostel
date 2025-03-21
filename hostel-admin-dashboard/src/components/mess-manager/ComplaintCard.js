@@ -1,86 +1,153 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, Badge, Button, Collapse } from 'react-bootstrap';
 
 const ComplaintCard = ({ complaint, onResolve, onDelete }) => {
+  const [expanded, setExpanded] = useState(false);
+
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
-        <div className="flex items-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Complaint from {complaint.studentName}
-          </h3>
-          <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
-            complaint.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-          }`}>
-            {complaint.status}
-          </span>
+    <Card className="custom-card mb-3 border-0">
+      <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
+        <div className="d-flex align-items-center">
+          <div>
+            <h5 className="mb-0 fw-semibold">
+              Complaint #{complaint.id.slice(-5)}
+            </h5>
+            <p className="text-muted mb-0 small">
+              From {complaint.studentName} • Room {complaint.roomNumber}
+            </p>
+          </div>
         </div>
-        <div className="text-sm text-gray-500">
-          Submitted: {formatDate(complaint.createdAt)}
-        </div>
-      </div>
-      
-      <div className="px-4 py-5 sm:p-6">
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Registration Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{complaint.regNumber}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Room Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{complaint.roomNumber}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Category</dt>
-            <dd className="mt-1 text-sm text-gray-900">{complaint.category}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Status</dt>
-            <dd className="mt-1 text-sm text-gray-900 capitalize">{complaint.status}</dd>
-          </div>
-          
-          <div className="sm:col-span-2">
-            <dt className="text-sm font-medium text-gray-500">Complaint Description</dt>
-            <dd className="mt-1 text-sm text-gray-900">{complaint.description}</dd>
-          </div>
-          
-          {complaint.status === 'resolved' && complaint.resolvedAt && (
-            <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-gray-500">Resolved At</dt>
-              <dd className="mt-1 text-sm text-gray-900">{formatDate(complaint.resolvedAt)}</dd>
-            </div>
-          )}
-        </dl>
-      </div>
-      
-      <div className="border-t border-gray-200 px-4 py-4 sm:px-6">
-        <div className="flex justify-end space-x-3">
-          {complaint.status === 'pending' && (
-            <button
-              onClick={() => onResolve(complaint.id)}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
-              Mark as Resolved
-            </button>
-          )}
-          
-          <button
-            onClick={() => onDelete(complaint.id)}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        <div className="d-flex align-items-center">
+          <Badge 
+            className={`me-2 ${complaint.status === 'pending' ? 'badge-pending' : 'badge-resolved'}`}
           >
-            Delete
-          </button>
+            {complaint.status}
+          </Badge>
+          <Button 
+            variant="link" 
+            className="text-muted p-0 ms-2"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`transition-transform ${expanded ? 'rotate-180' : ''}`}
+              style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </Button>
         </div>
-      </div>
-    </div>
+      </Card.Header>
+      
+      <Collapse in={expanded}>
+        <div>
+          <Card.Body className="pt-0 pb-3">
+            <div className="row mt-3">
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">REGISTRATION NUMBER</h6>
+                <p>{complaint.regNumber}</p>
+              </div>
+              
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">SUBMITTED ON</h6>
+                <p>{formatDate(complaint.createdAt)}</p>
+              </div>
+              
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">CATEGORY</h6>
+                <p>{complaint.category}</p>
+              </div>
+              
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">STATUS</h6>
+                <p className="text-capitalize">
+                  {complaint.status}
+                  {complaint.status === 'resolved' && complaint.resolvedAt && (
+                    <span className="text-muted ms-2 small">
+                      (on {formatDate(complaint.resolvedAt)})
+                    </span>
+                  )}
+                </p>
+              </div>
+              
+              <div className="col-12">
+                <h6 className="text-muted fw-semibold small">COMPLAINT DESCRIPTION</h6>
+                <Card className="bg-light border-0">
+                  <Card.Body className="py-3">
+                    {complaint.description}
+                  </Card.Body>
+                </Card>
+              </div>
+            </div>
+          </Card.Body>
+          
+          <Card.Footer className="bg-white border-top d-flex justify-content-end py-3">
+            {complaint.status === 'pending' && (
+              <Button
+                variant="success"
+                size="sm"
+                className="me-2"
+                onClick={() => onResolve(complaint.id)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="me-1"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Mark as Resolved
+              </Button>
+            )}
+            
+            <Button
+              variant="outline-danger"
+              size="sm"
+              onClick={() => onDelete(complaint.id)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="me-1"
+              >
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete
+            </Button>
+          </Card.Footer>
+        </div>
+      </Collapse>
+    </Card>
   );
 };
 

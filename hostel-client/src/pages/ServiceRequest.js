@@ -98,90 +98,210 @@ const ServiceRequest = () => {
     }
   };
 
+  const serviceTypes = [
+    { 
+      id: 'electrician', 
+      name: 'Electrician', 
+      icon: 'bi-lightning-charge',
+      color: 'warning',
+      description: 'For electrical issues like lights, fans, switches, etc.'
+    },
+    { 
+      id: 'plumber', 
+      name: 'Plumber', 
+      icon: 'bi-droplet',
+      color: 'info',
+      description: 'For water supply issues, leaking taps, drainage problems, etc.'
+    },
+    { 
+      id: 'carpenter', 
+      name: 'Carpenter', 
+      icon: 'bi-hammer',
+      color: 'secondary',
+      description: 'For furniture repairs, door/window issues, etc.'
+    },
+    { 
+      id: 'laundry', 
+      name: 'Laundry', 
+      icon: 'bi-basket3',
+      color: 'primary',
+      description: 'For laundry pickup, delivery or related services'
+    },
+    { 
+      id: 'cab', 
+      name: 'Cab', 
+      icon: 'bi-car-front',
+      color: 'success',
+      description: 'For transportation requests to/from campus'
+    },
+  ];
+
   return (
-    <>
+    <div className="min-vh-100 bg-light">
       <Navbar />
       
       <Container className="py-4">
-        <h1 className="mb-4">Request a Service</h1>
+        <div className="d-flex align-items-center mb-4">
+          <div className="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+            <i className="bi bi-tools text-primary fs-4"></i>
+          </div>
+          <h1 className="mb-0">Request a Service</h1>
+        </div>
         
-        <Card>
-          <Card.Body>
-            {error && <Alert variant="danger">{error}</Alert>}
-            {success && <Alert variant="success">{success}</Alert>}
+        <Card className="border-0 shadow-sm">
+          <Card.Body className="p-4">
+            {error && (
+              <Alert variant="danger" className="d-flex align-items-center">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>{error}</div>
+              </Alert>
+            )}
+            
+            {success && (
+              <Alert variant="success" className="d-flex align-items-center">
+                <i className="bi bi-check-circle-fill me-2"></i>
+                <div>{success}</div>
+              </Alert>
+            )}
             
             <Form onSubmit={handleSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Service Type</Form.Label>
-                <Form.Select
-                  name="serviceType"
-                  value={formData.serviceType}
-                  onChange={handleChange}
+              <Card className="border-0 shadow-sm bg-light mb-4">
+                <Card.Body className="p-3">
+                  <h5 className="mb-3">
+                    <i className="bi bi-person-gear me-2"></i>
+                    Service Type
+                  </h5>
+                  
+                  <Row className="g-3">
+                    {serviceTypes.map((service) => (
+                      <Col md={6} lg={4} key={service.id}>
+                        <Card 
+                          className={`border-0 h-100 ${formData.serviceType === service.id ? `bg-${service.color} bg-opacity-10` : 'bg-white'}`}
+                          style={{cursor: 'pointer'}}
+                          onClick={() => setFormData({...formData, serviceType: service.id})}
+                        >
+                          <Card.Body className="p-3">
+                            <div className="form-check">
+                              <Form.Check 
+                                type="radio"
+                                id={`service-${service.id}`}
+                                name="serviceType"
+                                checked={formData.serviceType === service.id}
+                                onChange={() => setFormData({...formData, serviceType: service.id})}
+                                label=""
+                                className="position-absolute"
+                              />
+                              <div className="ms-4">
+                                <div className={`text-${service.color} d-flex align-items-center mb-2`}>
+                                  <i className={`bi ${service.icon} me-2 fs-5`}></i>
+                                  <h6 className="mb-0">{service.name}</h6>
+                                </div>
+                                <p className="text-muted small mb-0">
+                                  {service.description}
+                                </p>
+                              </div>
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                </Card.Body>
+              </Card>
+              
+              <Card className="border-0 shadow-sm bg-light mb-4">
+                <Card.Body className="p-3">
+                  <h5 className="mb-3">
+                    <i className="bi bi-info-circle me-2"></i>
+                    Request Details
+                  </h5>
+                  
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-bold">
+                      <i className="bi bi-chat-left-text me-2"></i>
+                      Problem Description
+                    </Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      name="problem"
+                      rows="4"
+                      value={formData.problem}
+                      onChange={handleChange}
+                      placeholder="Please describe your problem in detail"
+                      required
+                      className="shadow-sm"
+                    />
+                    <Form.Text className="text-muted">
+                      Provide as much detail as possible to help us address your issue quickly
+                    </Form.Text>
+                  </Form.Group>
+                  
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">
+                          <i className="bi bi-door-closed me-2"></i>
+                          Room Number
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="roomNumber"
+                          value={formData.roomNumber}
+                          onChange={handleChange}
+                          required
+                          className="shadow-sm"
+                          placeholder="Your room number"
+                        />
+                      </Form.Group>
+                    </Col>
+                    
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">
+                          <i className="bi bi-telephone me-2"></i>
+                          Contact Number
+                        </Form.Label>
+                        <Form.Control
+                          type="text"
+                          name="contactNumber"
+                          value={formData.contactNumber}
+                          onChange={handleChange}
+                          required
+                          className="shadow-sm"
+                          placeholder="Your contact number"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+              
+              <div className="d-grid gap-2">
+                <Button 
+                  variant="primary" 
+                  type="submit"
+                  disabled={loading}
+                  size="lg"
+                  className="shadow-sm"
                 >
-                  <option value="electrician">Electrician</option>
-                  <option value="plumber">Plumber</option>
-                  <option value="carpenter">Carpenter</option>
-                  <option value="laundry">Laundry</option>
-                  <option value="cab">Cab</option>
-                </Form.Select>
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>Problem Description</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  name="problem"
-                  rows="4"
-                  value={formData.problem}
-                  onChange={handleChange}
-                  placeholder="Please describe your problem in detail"
-                />
-              </Form.Group>
-              
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Room Number</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="roomNumber"
-                      value={formData.roomNumber}
-                      onChange={handleChange}
-                    />
-                  </Form.Group>
-                </Col>
-                
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Contact Number</Form.Label>
-                    <Form.Control
-                      type="text"
-                      name="contactNumber"
-                      value={formData.contactNumber}
-                      onChange={handleChange}
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
-              
-              <Button 
-                variant="primary" 
-                type="submit"
-                disabled={loading}
-                className="w-100"
-              >
-                {loading ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Submitting...
-                  </>
-                ) : 'Submit Request'}
-              </Button>
+                  {loading ? (
+                    <div className="d-flex align-items-center justify-content-center">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span>Processing request...</span>
+                    </div>
+                  ) : (
+                    <div className="d-flex align-items-center justify-content-center">
+                      <i className="bi bi-send me-2"></i>
+                      <span>Submit Request</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
             </Form>
           </Card.Body>
         </Card>
       </Container>
-    </>
+    </div>
   );
 };
 

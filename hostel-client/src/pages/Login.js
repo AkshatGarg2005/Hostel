@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 
 const Login = () => {
   const { login, currentUser } = useAuth();
@@ -42,97 +43,97 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Hostel Portal
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Sign in to access your hostel services
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {error && (
-            <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+    <div className="min-vh-100 d-flex align-items-center bg-light py-5">
+      <Container>
+        <Row className="justify-content-center">
+          <Col md={8} lg={6} xl={5}>
+            <div className="text-center mb-4">
+              <div className="bg-primary text-white display-4 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{width: "80px", height: "80px"}}>
+                <i className="bi bi-building"></i>
               </div>
+              <h1 className="fw-bold text-primary">Hostel Portal</h1>
+              <p className="text-muted">Sign in to access your hostel services</p>
             </div>
+            
+            <Card className="border-0 shadow-sm">
+              <Card.Body className="p-4 p-lg-5">
+                {error && (
+                  <Alert variant="danger" className="d-flex align-items-center">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>{error}</div>
+                  </Alert>
+                )}
+                
+                <Form onSubmit={handleSubmit}>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-bold">
+                      <i className="bi bi-envelope me-2"></i>Email address
+                    </Form.Label>
+                    <Form.Control
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="shadow-sm form-control-lg py-3"
+                    />
+                  </Form.Group>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
+                  <Form.Group className="mb-4">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <Form.Label className="fw-bold">
+                        <i className="bi bi-lock me-2"></i>Password
+                      </Form.Label>
+                    </div>
+                    <Form.Control
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="shadow-sm form-control-lg py-3"
+                    />
+                  </Form.Group>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  loading ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </button>
+                  <div className="d-grid gap-2 mt-4">
+                    <Button 
+                      variant="primary" 
+                      type="submit" 
+                      size="lg"
+                      className="py-3"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <div className="d-flex align-items-center justify-content-center">
+                          <Spinner animation="border" size="sm" className="me-2" />
+                          Signing in...
+                        </div>
+                      ) : (
+                        <div className="d-flex align-items-center justify-content-center">
+                          <i className="bi bi-box-arrow-in-right me-2"></i>
+                          Sign in
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+                
+                <div className="text-center mt-4">
+                  <p className="mb-0 text-muted">
+                    Don't have an account? <Link to="/register" className="fw-bold text-primary text-decoration-none">Register here</Link>
+                  </p>
+                </div>
+              </Card.Body>
+            </Card>
+            
+            <div className="text-center mt-4">
+              <p className="text-muted small mb-0">
+                <i className="bi bi-shield-lock me-1"></i> Secure login for hostel residents
+              </p>
             </div>
-          </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  New to Hostel Portal?
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                to="/register"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-blue-600 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Create an account
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+          </Col>
+        </Row>
+      </Container>
     </div>
   );
 };

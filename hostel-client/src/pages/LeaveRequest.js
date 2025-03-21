@@ -113,119 +113,210 @@ const LeaveRequest = () => {
   };
 
   return (
-    <>
+    <div className="min-vh-100 bg-light">
       <Navbar />
       
       <Container className="py-4">
-        <h1 className="mb-4">Request Leave/Outing</h1>
+        <div className="d-flex align-items-center mb-4">
+          <div className="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+            <i className="bi bi-box-arrow-right text-primary fs-4"></i>
+          </div>
+          <h1 className="mb-0">Request Leave/Outing</h1>
+        </div>
         
-        <Card>
-          <Card.Body>
-            {error && <Alert variant="danger">{error}</Alert>}
-            {success && <Alert variant="success">{success}</Alert>}
+        <Card className="border-0 shadow-sm">
+          <Card.Body className="p-4">
+            {error && (
+              <Alert variant="danger" className="d-flex align-items-center">
+                <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>{error}</div>
+              </Alert>
+            )}
+            
+            {success && (
+              <Alert variant="success" className="d-flex align-items-center">
+                <i className="bi bi-check-circle-fill me-2"></i>
+                <div>{success}</div>
+              </Alert>
+            )}
             
             <Form onSubmit={handleSubmit}>
-              <Row>
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Checkout Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="checkoutDate"
-                      value={formData.checkoutDate}
-                      onChange={handleChange}
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-                
-                <Col md={6}>
-                  <Form.Group className="mb-3">
-                    <Form.Label>Return Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      name="returnDate"
-                      value={formData.returnDate}
-                      onChange={handleChange}
-                      required
-                    />
-                  </Form.Group>
-                </Col>
-              </Row>
+              <Card className="border-0 shadow-sm bg-light mb-4">
+                <Card.Body className="p-3">
+                  <h5 className="card-title mb-3">
+                    <i className="bi bi-calendar-date me-2"></i>
+                    Leave Dates
+                  </h5>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">
+                          <i className="bi bi-box-arrow-right me-2"></i>
+                          Checkout Date
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          name="checkoutDate"
+                          value={formData.checkoutDate}
+                          onChange={handleChange}
+                          required
+                          className="shadow-sm"
+                        />
+                        <Form.Text className="text-muted">
+                          Select the date you plan to leave
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                    
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">
+                          <i className="bi bi-box-arrow-in-right me-2"></i>
+                          Return Date
+                        </Form.Label>
+                        <Form.Control
+                          type="date"
+                          name="returnDate"
+                          value={formData.returnDate}
+                          onChange={handleChange}
+                          required
+                          className="shadow-sm"
+                        />
+                        <Form.Text className="text-muted">
+                          Select your expected return date
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
               
-              <Form.Group className="mb-3">
-                <Form.Label>Reason for Leave</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  name="reason"
-                  rows="3"
-                  value={formData.reason}
-                  onChange={handleChange}
-                  placeholder="Please provide a detailed reason for your leave"
-                  required
-                />
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>Destination Address</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  name="destinationAddress"
-                  rows="2"
-                  value={formData.destinationAddress}
-                  onChange={handleChange}
-                  placeholder="Full address of your destination"
-                  required
-                />
-              </Form.Group>
-              
-              <Row>
-                <Col md={6}>
+              <Card className="border-0 shadow-sm bg-light mb-4">
+                <Card.Body className="p-3">
+                  <h5 className="card-title mb-3">
+                    <i className="bi bi-info-circle me-2"></i>
+                    Leave Details
+                  </h5>
+                  
                   <Form.Group className="mb-3">
-                    <Form.Label>Your Phone Number</Form.Label>
+                    <Form.Label className="fw-bold">
+                      <i className="bi bi-chat-left-text me-2"></i>
+                      Reason for Leave
+                    </Form.Label>
                     <Form.Control
-                      type="tel"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
+                      as="textarea"
+                      name="reason"
+                      rows="3"
+                      value={formData.reason}
                       onChange={handleChange}
+                      placeholder="Please provide a detailed reason for your leave"
                       required
+                      className="shadow-sm"
                     />
+                    <Form.Text className="text-muted">
+                      Be specific about the purpose of your leave
+                    </Form.Text>
                   </Form.Group>
-                </Col>
-                
-                <Col md={6}>
+                  
                   <Form.Group className="mb-3">
-                    <Form.Label>Emergency Contact Number</Form.Label>
+                    <Form.Label className="fw-bold">
+                      <i className="bi bi-geo-alt me-2"></i>
+                      Destination Address
+                    </Form.Label>
                     <Form.Control
-                      type="tel"
-                      name="emergencyContact"
-                      value={formData.emergencyContact}
+                      as="textarea"
+                      name="destinationAddress"
+                      rows="2"
+                      value={formData.destinationAddress}
                       onChange={handleChange}
-                      placeholder="Parent/Guardian phone number"
+                      placeholder="Full address of your destination"
                       required
+                      className="shadow-sm"
                     />
+                    <Form.Text className="text-muted">
+                      Provide the complete address where you'll be staying
+                    </Form.Text>
                   </Form.Group>
-                </Col>
-              </Row>
+                </Card.Body>
+              </Card>
               
-              <Button 
-                variant="primary" 
-                type="submit"
-                disabled={loading}
-                className="w-100"
-              >
-                {loading ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Submitting...
-                  </>
-                ) : 'Submit Request'}
-              </Button>
+              <Card className="border-0 shadow-sm bg-light mb-4">
+                <Card.Body className="p-3">
+                  <h5 className="card-title mb-3">
+                    <i className="bi bi-telephone me-2"></i>
+                    Contact Information
+                  </h5>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">
+                          <i className="bi bi-phone me-2"></i>
+                          Your Phone Number
+                        </Form.Label>
+                        <Form.Control
+                          type="tel"
+                          name="phoneNumber"
+                          value={formData.phoneNumber}
+                          onChange={handleChange}
+                          required
+                          className="shadow-sm"
+                        />
+                        <Form.Text className="text-muted">
+                          Your active contact number
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                    
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label className="fw-bold">
+                          <i className="bi bi-telephone-forward me-2"></i>
+                          Emergency Contact Number
+                        </Form.Label>
+                        <Form.Control
+                          type="tel"
+                          name="emergencyContact"
+                          value={formData.emergencyContact}
+                          onChange={handleChange}
+                          placeholder="Parent/Guardian phone number"
+                          required
+                          className="shadow-sm"
+                        />
+                        <Form.Text className="text-muted">
+                          Parent/Guardian contact number
+                        </Form.Text>
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+              
+              <div className="d-grid gap-2">
+                <Button 
+                  variant="primary" 
+                  type="submit"
+                  disabled={loading}
+                  size="lg"
+                  className="shadow-sm"
+                >
+                  {loading ? (
+                    <div className="d-flex align-items-center justify-content-center">
+                      <Spinner animation="border" size="sm" className="me-2" />
+                      <span>Processing request...</span>
+                    </div>
+                  ) : (
+                    <div className="d-flex align-items-center justify-content-center">
+                      <i className="bi bi-send me-2"></i>
+                      <span>Submit Request</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
             </Form>
           </Card.Body>
         </Card>
       </Container>
-    </>
+    </div>
   );
 };
 

@@ -1,107 +1,302 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, Badge, Button, Collapse } from 'react-bootstrap';
 
 const ServiceRequestCard = ({ request, onAccept, onDelete }) => {
+  const [expanded, setExpanded] = useState(false);
+
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   // Determine badge color based on service type
-  const getBadgeColor = (type) => {
+  const getServiceTypeColor = (type) => {
     switch (type.toLowerCase()) {
       case 'electrician':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'badge-electrician';
       case 'plumber':
-        return 'bg-blue-100 text-blue-800';
+        return 'badge-plumber';
       case 'carpenter':
-        return 'bg-brown-100 text-brown-800';
+        return 'badge-carpenter';
       case 'laundry':
-        return 'bg-purple-100 text-purple-800';
+        return 'badge-laundry';
       case 'cab':
-        return 'bg-green-100 text-green-800';
+        return 'badge-cab';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-secondary bg-opacity-10 text-secondary';
+    }
+  };
+
+  // Get service icon based on type
+  const getServiceIcon = (type) => {
+    switch (type.toLowerCase()) {
+      case 'electrician':
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+          </svg>
+        );
+      case 'plumber':
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M14 8v-2a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v2"></path>
+            <path d="M2 9h20v12H2z"></path>
+            <path d="M12 14v4"></path>
+            <path d="M8 14v4"></path>
+            <path d="M16 14v4"></path>
+          </svg>
+        );
+      case 'carpenter':
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 10h18"></path>
+            <path d="M12 10v10"></path>
+            <circle cx="12" cy="5" r="2"></circle>
+            <path d="M12 7v3"></path>
+          </svg>
+        );
+      case 'laundry':
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 8v8"></path>
+            <path d="M8 12h8"></path>
+          </svg>
+        );
+      case 'cab':
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M19 17h2v5H3v-5h2"></path>
+            <path d="M8 17h8"></path>
+            <path d="M9 17v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"></path>
+            <path d="M6 7.2A9.2 9.2 0 0 1 12 3a8.8 8.8 0 0 1 6 4.2V16H6V7.2Z"></path>
+          </svg>
+        );
+      default:
+        return (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="14 2 18 6 7 17 3 17 3 13 14 2"></polygon>
+            <line x1="3" y1="22" x2="21" y2="22"></line>
+          </svg>
+        );
     }
   };
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
-        <div className="flex items-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Token #{request.tokenNumber}
-          </h3>
-          <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getBadgeColor(request.serviceType)}`}>
-            {request.serviceType}
-          </span>
-          <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
-            request.status === 'pending' ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'
-          }`}>
-            {request.status}
-          </span>
+    <Card className="custom-card mb-3 border-0">
+      <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
+        <div className="d-flex align-items-center">
+          <div>
+            <h5 className="mb-0 fw-semibold">
+              Token #{request.tokenNumber || request.id.slice(-5)}
+            </h5>
+            <p className="text-muted mb-0 small">
+              Room {request.roomNumber} • {request.regNumber}
+            </p>
+          </div>
         </div>
-        <div className="text-sm text-gray-500">
-          Requested: {formatDate(request.createdAt)}
-        </div>
-      </div>
-      
-      <div className="px-4 py-5 sm:p-6">
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Room Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.roomNumber}</dd>
-          </div>
+        <div className="d-flex align-items-center">
+          <Badge className={`me-2 ${getServiceTypeColor(request.serviceType)}`}>
+            <span className="d-flex align-items-center">
+              {getServiceIcon(request.serviceType)}
+              <span className="ms-1">{request.serviceType}</span>
+            </span>
+          </Badge>
           
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Registration Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.regNumber}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Contact Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.contactNumber}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Status</dt>
-            <dd className="mt-1 text-sm text-gray-900 capitalize">{request.status}</dd>
-          </div>
-          
-          <div className="sm:col-span-2">
-            <dt className="text-sm font-medium text-gray-500">Problem Description</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.problem}</dd>
-          </div>
-          
-          {request.status === 'accepted' && request.acceptedAt && (
-            <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-gray-500">Accepted At</dt>
-              <dd className="mt-1 text-sm text-gray-900">{formatDate(request.acceptedAt)}</dd>
-            </div>
-          )}
-        </dl>
-      </div>
-      
-      <div className="border-t border-gray-200 px-4 py-4 sm:px-6">
-        <div className="flex justify-end space-x-3">
-          {request.status === 'pending' && (
-            <button
-              onClick={() => onAccept(request.id)}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
-              Accept
-            </button>
-          )}
-          
-          <button
-            onClick={() => onDelete(request.id)}
-            className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          <Badge 
+            className={`me-2 ${request.status === 'pending' ? 'badge-pending' : 'badge-approved'}`}
           >
-            Delete
-          </button>
+            {request.status}
+          </Badge>
+          
+          <Button 
+            variant="link" 
+            className="text-muted p-0 ms-2"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </Button>
         </div>
-      </div>
-    </div>
+      </Card.Header>
+      
+      <Collapse in={expanded}>
+        <div>
+          <Card.Body className="pt-0 pb-3">
+            <div className="row mt-3">
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">CONTACT NUMBER</h6>
+                <p>{request.contactNumber}</p>
+              </div>
+              
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">REQUESTED ON</h6>
+                <p>{formatDate(request.createdAt)}</p>
+              </div>
+              
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">SERVICE TYPE</h6>
+                <div className="d-flex align-items-center">
+                  <Badge className={`${getServiceTypeColor(request.serviceType)} me-2`}>
+                    {getServiceIcon(request.serviceType)}
+                  </Badge>
+                  <span>{request.serviceType}</span>
+                </div>
+              </div>
+              
+              <div className="col-md-6 mb-3">
+                <h6 className="text-muted fw-semibold small">STATUS</h6>
+                <p className="text-capitalize">
+                  {request.status}
+                  {request.status === 'accepted' && request.acceptedAt && (
+                    <span className="text-muted ms-2 small">
+                      (on {formatDate(request.acceptedAt)})
+                    </span>
+                  )}
+                </p>
+              </div>
+              
+              <div className="col-12">
+                <h6 className="text-muted fw-semibold small">PROBLEM DESCRIPTION</h6>
+                <Card className="bg-light border-0">
+                  <Card.Body className="py-3">
+                    {request.problem}
+                  </Card.Body>
+                </Card>
+              </div>
+            </div>
+          </Card.Body>
+          
+          <Card.Footer className="bg-white border-top d-flex justify-content-end py-3">
+            {request.status === 'pending' && (
+              <Button
+                variant="success"
+                size="sm"
+                className="me-2"
+                onClick={() => onAccept(request.id)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="me-1"
+                >
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Accept Request
+              </Button>
+            )}
+            
+            <Button
+              variant="outline-danger"
+              size="sm"
+              onClick={() => onDelete(request.id)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="me-1"
+              >
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete
+            </Button>
+          </Card.Footer>
+        </div>
+      </Collapse>
+    </Card>
   );
 };
 

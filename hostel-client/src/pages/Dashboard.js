@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, orderBy, limit } from 'firebase/fire
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Navbar from '../components/common/Navbar';
+import { Container, Row, Col, Card, Badge } from 'react-bootstrap';
 
 const Dashboard = () => {
   const { currentUser, userDetails } = useAuth();
@@ -66,29 +67,6 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [currentUser]);
 
-  const StatCard = ({ title, count, icon, color, linkTo }) => {
-    return (
-      <Link
-        to={linkTo}
-        className={`block p-6 max-w-sm bg-white rounded-lg border border-gray-200 shadow-md hover:bg-gray-100`}
-      >
-        <div className="flex items-center">
-          <div className={`p-3 rounded-full ${color} text-white mr-4`}>
-            {icon}
-          </div>
-          <div>
-            <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-              {count}
-            </h5>
-            <p className="font-normal text-gray-700">
-              {title}
-            </p>
-          </div>
-        </div>
-      </Link>
-    );
-  };
-
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -99,32 +77,61 @@ const Dashboard = () => {
     if (!latestMenu || latestMenu.type !== 'daily') return null;
     
     return (
-      <div className="bg-white shadow rounded-lg p-6 mt-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Menu ({formatDate(latestMenu.createdAt)})</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-medium text-gray-700">Breakfast</h4>
-            <p className="text-gray-600">{latestMenu.breakfast}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-700">Lunch</h4>
-            <p className="text-gray-600">{latestMenu.lunch}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-700">Snacks</h4>
-            <p className="text-gray-600">{latestMenu.snacks}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-700">Dinner</h4>
-            <p className="text-gray-600">{latestMenu.dinner}</p>
-          </div>
-        </div>
-        <div className="mt-4 text-right">
-          <Link to="/mess-menu" className="text-blue-600 hover:text-blue-800">
-            View full menu →
+      <Card className="shadow-sm border-0 mb-4 h-100">
+        <Card.Header className="bg-white border-bottom d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Today's Menu ({formatDate(latestMenu.createdAt)})</h5>
+          <Link to="/mess-menu" className="text-primary text-decoration-none">
+            View Full Menu
           </Link>
-        </div>
-      </div>
+        </Card.Header>
+        <Card.Body>
+          <Row>
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-primary mb-2">
+                    <i className="bi bi-sunrise me-2"></i>Breakfast
+                  </h6>
+                  <p className="mb-0">{latestMenu.breakfast}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-warning mb-2">
+                    <i className="bi bi-sun me-2"></i>Lunch
+                  </h6>
+                  <p className="mb-0">{latestMenu.lunch}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-info mb-2">
+                    <i className="bi bi-cup-hot me-2"></i>Snacks
+                  </h6>
+                  <p className="mb-0">{latestMenu.snacks}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-dark mb-2">
+                    <i className="bi bi-moon me-2"></i>Dinner
+                  </h6>
+                  <p className="mb-0">{latestMenu.dinner}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
     );
   };
 
@@ -136,117 +143,194 @@ const Dashboard = () => {
     const today = days[new Date().getDay()];
     
     return (
-      <div className="bg-white shadow rounded-lg p-6 mt-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Menu (from Weekly Schedule)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-medium text-gray-700">Breakfast</h4>
-            <p className="text-gray-600">{latestMenu[today]?.breakfast || 'Not available'}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-700">Lunch</h4>
-            <p className="text-gray-600">{latestMenu[today]?.lunch || 'Not available'}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-700">Snacks</h4>
-            <p className="text-gray-600">{latestMenu[today]?.snacks || 'Not available'}</p>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-700">Dinner</h4>
-            <p className="text-gray-600">{latestMenu[today]?.dinner || 'Not available'}</p>
-          </div>
-        </div>
-        <div className="mt-4 text-right">
-          <Link to="/mess-menu" className="text-blue-600 hover:text-blue-800">
-            View full menu →
+      <Card className="shadow-sm border-0 mb-4">
+        <Card.Header className="bg-white border-bottom d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Today's Menu (from Weekly Schedule)</h5>
+          <Link to="/mess-menu" className="text-primary text-decoration-none">
+            View Full Menu
           </Link>
-        </div>
-      </div>
+        </Card.Header>
+        <Card.Body>
+          <Row>
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-primary mb-2">
+                    <i className="bi bi-sunrise me-2"></i>Breakfast
+                  </h6>
+                  <p className="mb-0">{latestMenu[today]?.breakfast || 'Not available'}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-warning mb-2">
+                    <i className="bi bi-sun me-2"></i>Lunch
+                  </h6>
+                  <p className="mb-0">{latestMenu[today]?.lunch || 'Not available'}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-info mb-2">
+                    <i className="bi bi-cup-hot me-2"></i>Snacks
+                  </h6>
+                  <p className="mb-0">{latestMenu[today]?.snacks || 'Not available'}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-3">
+              <Card className="border-0 bg-light h-100">
+                <Card.Body>
+                  <h6 className="text-dark mb-2">
+                    <i className="bi bi-moon me-2"></i>Dinner
+                  </h6>
+                  <p className="mb-0">{latestMenu[today]?.dinner || 'Not available'}</p>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-vh-100 bg-light">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Dashboard
-        </h1>
+      <Container className="py-4">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h1 className="fw-bold">Welcome, {userDetails?.name}</h1>
+          <h6 className="text-muted mb-0">Room: {userDetails?.roomNumber}</h6>
+        </div>
         
         {loading ? (
-          <div className="text-center py-10">
-            <div className="spinner"></div>
-            <p className="mt-3 text-gray-600">Loading dashboard data...</p>
+          <div className="text-center py-5">
+            <div className="spinner-grow text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-3 text-muted">Loading your dashboard...</p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard
-                title="Pending Service Requests"
-                count={stats.pendingServices}
-                icon={
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path>
-                  </svg>
-                }
-                color="bg-blue-500"
-                linkTo="/my-services"
-              />
+            <Row className="mb-4">
+              {/* Pending Services Card */}
+              <Col md={6} lg={3} className="mb-4">
+                <Card className="shadow-sm border-0 h-100 dashboard-stat-card">
+                  <Card.Body className="d-flex align-items-center">
+                    <div className="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                      <i className="bi bi-tools text-primary fs-4"></i>
+                    </div>
+                    <div>
+                      <h2 className="fw-bold mb-0">{stats.pendingServices}</h2>
+                      <p className="text-muted mb-0">Pending Services</p>
+                    </div>
+                  </Card.Body>
+                  <Card.Footer className="bg-white border-top-0">
+                    <Link to="/my-services" className="text-decoration-none d-block text-center text-primary">
+                      View Requests <i className="bi bi-arrow-right"></i>
+                    </Link>
+                  </Card.Footer>
+                </Card>
+              </Col>
               
-              <StatCard
-                title="Pending Leave Requests"
-                count={stats.pendingLeaves}
-                icon={
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"></path>
-                  </svg>
-                }
-                color="bg-green-500"
-                linkTo="/my-leaves"
-              />
+              {/* Pending Leaves Card */}
+              <Col md={6} lg={3} className="mb-4">
+                <Card className="shadow-sm border-0 h-100 dashboard-stat-card">
+                  <Card.Body className="d-flex align-items-center">
+                    <div className="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                      <i className="bi bi-calendar2-check text-success fs-4"></i>
+                    </div>
+                    <div>
+                      <h2 className="fw-bold mb-0">{stats.pendingLeaves}</h2>
+                      <p className="text-muted mb-0">Pending Leaves</p>
+                    </div>
+                  </Card.Body>
+                  <Card.Footer className="bg-white border-top-0">
+                    <Link to="/my-leaves" className="text-decoration-none d-block text-center text-success">
+                      View Requests <i className="bi bi-arrow-right"></i>
+                    </Link>
+                  </Card.Footer>
+                </Card>
+              </Col>
               
-              <div className="md:col-span-2 bg-white rounded-lg border border-gray-200 shadow-md p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Link
-                    to="/service-request"
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-center"
-                  >
-                    Request Service
-                  </Link>
-                  <Link
-                    to="/mess-complaint"
-                    className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-center"
-                  >
-                    Mess Complaint
-                  </Link>
-                  <Link
-                    to="/leave-request"
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-center"
-                  >
-                    Request Leave
-                  </Link>
-                  <Link
-                    to="/mess-menu"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-center"
-                  >
-                    View Menu
-                  </Link>
-                </div>
-              </div>
-            </div>
+              {/* Quick Actions Card */}
+              <Col md={12} lg={6} className="mb-4">
+                <Card className="shadow-sm border-0 h-100">
+                  <Card.Header className="bg-white border-bottom">
+                    <h5 className="mb-0">Quick Actions</h5>
+                  </Card.Header>
+                  <Card.Body>
+                    <Row className="g-3">
+                      <Col xs={6} md={3}>
+                        <Link to="/service-request" className="text-decoration-none">
+                          <Card className="text-center h-100 border-0 bg-primary bg-opacity-10 quick-action-card">
+                            <Card.Body className="p-3">
+                              <i className="bi bi-tools text-primary fs-3 mb-2"></i>
+                              <p className="mb-0 text-primary fw-medium small">Request Service</p>
+                            </Card.Body>
+                          </Card>
+                        </Link>
+                      </Col>
+                      
+                      <Col xs={6} md={3}>
+                        <Link to="/mess-complaint" className="text-decoration-none">
+                          <Card className="text-center h-100 border-0 bg-warning bg-opacity-10 quick-action-card">
+                            <Card.Body className="p-3">
+                              <i className="bi bi-chat-square-text text-warning fs-3 mb-2"></i>
+                              <p className="mb-0 text-warning fw-medium small">Mess Complaint</p>
+                            </Card.Body>
+                          </Card>
+                        </Link>
+                      </Col>
+                      
+                      <Col xs={6} md={3}>
+                        <Link to="/leave-request" className="text-decoration-none">
+                          <Card className="text-center h-100 border-0 bg-success bg-opacity-10 quick-action-card">
+                            <Card.Body className="p-3">
+                              <i className="bi bi-box-arrow-right text-success fs-3 mb-2"></i>
+                              <p className="mb-0 text-success fw-medium small">Request Leave</p>
+                            </Card.Body>
+                          </Card>
+                        </Link>
+                      </Col>
+                      
+                      <Col xs={6} md={3}>
+                        <Link to="/mess-menu" className="text-decoration-none">
+                          <Card className="text-center h-100 border-0 bg-info bg-opacity-10 quick-action-card">
+                            <Card.Body className="p-3">
+                              <i className="bi bi-calendar3 text-info fs-3 mb-2"></i>
+                              <p className="mb-0 text-info fw-medium small">View Menu</p>
+                            </Card.Body>
+                          </Card>
+                        </Link>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
             
             {latestMenu ? (
               latestMenu.type === 'daily' ? renderDailyMenu() : renderWeeklyMenuPreview()
             ) : (
-              <div className="bg-white shadow rounded-lg p-6 mt-6 text-center">
-                <p className="text-gray-600">No mess menu available</p>
-              </div>
+              <Card className="shadow-sm border-0 text-center">
+                <Card.Body className="py-5">
+                  <i className="bi bi-calendar-x text-muted fs-1 mb-3"></i>
+                  <p className="text-muted">No mess menu available at the moment</p>
+                </Card.Body>
+              </Card>
             )}
           </>
         )}
-      </div>
+      </Container>
     </div>
   );
 };

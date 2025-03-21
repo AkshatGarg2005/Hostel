@@ -3,18 +3,30 @@ import { Link } from 'react-router-dom';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { Container, Row, Col, Card } from 'react-bootstrap';
 import Navbar from '../components/common/Navbar';
 
 const Dashboard = () => {
-  const { userRole } = useAuth();
+  const { userRole, currentUser } = useAuth();
   const [stats, setStats] = useState({
     serviceRequests: 0,
     messComplaints: 0,
     leaveRequests: 0
   });
   const [loading, setLoading] = useState(true);
+  const [greetingTime, setGreetingTime] = useState('');
 
   useEffect(() => {
+    // Set greeting based on time of day
+    const getCurrentGreeting = () => {
+      const hour = new Date().getHours();
+      if (hour < 12) return 'Good morning';
+      if (hour < 18) return 'Good afternoon';
+      return 'Good evening';
+    };
+    
+    setGreetingTime(getCurrentGreeting());
+    
     const fetchStats = async () => {
       try {
         // Get service requests count
@@ -53,88 +65,231 @@ const Dashboard = () => {
     fetchStats();
   }, []);
 
-  const StatCard = ({ title, count, icon, color, linkTo, allowed }) => {
+  const DashboardCard = ({ title, count, icon, color, bgColor, linkTo, allowed }) => {
     if (!allowed) return null;
     
     return (
-      <Link
-        to={linkTo}
-        className={`block p-6 max-w-sm bg-white rounded-lg border border-gray-200 shadow-md hover:bg-gray-100`}
-      >
-        <div className="flex items-center">
-          <div className={`p-3 rounded-full ${color} text-white mr-4`}>
-            {icon}
-          </div>
-          <div>
-            <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900">
-              {count}
-            </h5>
-            <p className="font-normal text-gray-700">
-              {title}
-            </p>
-          </div>
-        </div>
-      </Link>
+      <Col xs={12} md={6} lg={4} className="mb-4">
+        <Link to={linkTo} className="text-decoration-none">
+          <Card className="dashboard-card h-100 border-0">
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className={`dashboard-card-icon ${bgColor}`}>
+                  {icon}
+                </div>
+                <span className={`status-badge ${count > 0 ? 'badge-pending' : 'badge-resolved'}`}>
+                  {count > 0 ? 'Pending' : 'None pending'}
+                </span>
+              </div>
+              <div>
+                <h3 className="dashboard-card-count">{count}</h3>
+                <p className="dashboard-card-title">{title}</p>
+              </div>
+            </Card.Body>
+          </Card>
+        </Link>
+      </Col>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="page-container fade-in">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Dashboard
-        </h1>
+      <Container className="py-4">
+        <div className="mb-4">
+          <h1 className="fs-4 fw-bold mb-1">
+            {greetingTime}, {currentUser?.displayName || 'Administrator'}
+          </h1>
+          <p className="text-muted">
+            Here's what's happening in your hostel today
+          </p>
+        </div>
         
         {loading ? (
-          <div className="text-center py-10">
+          <div className="loading-container">
             <div className="spinner"></div>
-            <p className="mt-3 text-gray-600">Loading dashboard data...</p>
+            <p className="loading-text">Loading dashboard data...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard
-              title="Pending Service Requests"
+          <Row>
+            <DashboardCard
+              title="Service Requests"
               count={stats.serviceRequests}
               icon={
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary"
+                >
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
                 </svg>
               }
-              color="bg-blue-500"
+              color="text-primary"
+              bgColor="bg-primary bg-opacity-10"
               linkTo="/service-manager"
               allowed={userRole === 'admin' || userRole === 'service_manager'}
             />
             
-            <StatCard
-              title="Pending Mess Complaints"
+            <DashboardCard
+              title="Mess Complaints"
               count={stats.messComplaints}
               icon={
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-warning"
+                >
+                  <path d="M3 7v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"></path>
+                  <line x1="12" y1="12" x2="12" y2="12"></line>
+                  <polyline points="8 7 8 3 16 3 16 7"></polyline>
                 </svg>
               }
-              color="bg-yellow-500"
+              color="text-warning"
+              bgColor="bg-warning bg-opacity-10"
               linkTo="/mess-manager"
               allowed={userRole === 'admin' || userRole === 'mess_manager'}
             />
             
-            <StatCard
-              title="Pending Leave Requests"
+            <DashboardCard
+              title="Leave Requests"
               count={stats.leaveRequests}
               icon={
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"></path>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-success"
+                >
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
               }
-              color="bg-green-500"
+              color="text-success"
+              bgColor="bg-success bg-opacity-10"
               linkTo="/warden"
               allowed={userRole === 'admin' || userRole === 'warden'}
             />
-          </div>
+          </Row>
         )}
-      </div>
+        
+        {/* Quick Access Section */}
+        <div className="mt-5">
+          <h2 className="fs-5 fw-semibold mb-3">Quick Access</h2>
+          <Row>
+            {(userRole === 'admin' || userRole === 'service_manager') && (
+              <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
+                <Link to="/service-manager" className="text-decoration-none">
+                  <Card className="custom-card h-100">
+                    <Card.Body className="p-3 d-flex align-items-center">
+                      <div className="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-primary"
+                        >
+                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                      </div>
+                      <span className="fw-medium">Manage Services</span>
+                    </Card.Body>
+                  </Card>
+                </Link>
+              </Col>
+            )}
+            
+            {(userRole === 'admin' || userRole === 'mess_manager') && (
+              <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
+                <Link to="/mess-manager" className="text-decoration-none">
+                  <Card className="custom-card h-100">
+                    <Card.Body className="p-3 d-flex align-items-center">
+                      <div className="bg-warning bg-opacity-10 p-2 rounded-circle me-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-warning"
+                        >
+                          <path d="M3 7v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"></path>
+                          <line x1="12" y1="12" x2="12" y2="12"></line>
+                          <polyline points="8 7 8 3 16 3 16 7"></polyline>
+                        </svg>
+                      </div>
+                      <span className="fw-medium">Mess Management</span>
+                    </Card.Body>
+                  </Card>
+                </Link>
+              </Col>
+            )}
+            
+            {(userRole === 'admin' || userRole === 'warden') && (
+              <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
+                <Link to="/warden" className="text-decoration-none">
+                  <Card className="custom-card h-100">
+                    <Card.Body className="p-3 d-flex align-items-center">
+                      <div className="bg-success bg-opacity-10 p-2 rounded-circle me-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-success"
+                        >
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                          <line x1="16" y1="2" x2="16" y2="6"></line>
+                          <line x1="8" y1="2" x2="8" y2="6"></line>
+                          <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                      </div>
+                      <span className="fw-medium">Leave Approvals</span>
+                    </Card.Body>
+                  </Card>
+                </Link>
+              </Col>
+            )}
+          </Row>
+        </div>
+      </Container>
     </div>
   );
 };

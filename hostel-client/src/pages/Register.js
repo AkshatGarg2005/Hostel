@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Container, Row, Col, Form, Button, Card, Alert, Spinner } from 'react-bootstrap';
 
 const Register = () => {
   const { register, currentUser } = useAuth();
@@ -76,183 +77,205 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Create your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Register to access hostel services
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {error && (
-            <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+    <div className="min-vh-100 bg-light py-5">
+      <Container>
+        <Row className="justify-content-center">
+          <Col lg={8} xl={7}>
+            <div className="text-center mb-4">
+              <div className="bg-primary text-white display-4 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style={{width: "80px", height: "80px"}}>
+                <i className="bi bi-building"></i>
               </div>
+              <h1 className="fw-bold text-primary">Create your account</h1>
+              <p className="text-muted">Register to access hostel services</p>
             </div>
+            
+            <Card className="border-0 shadow-sm">
+              <Card.Body className="p-4 p-lg-5">
+                {error && (
+                  <Alert variant="danger" className="d-flex align-items-center">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>{error}</div>
+                  </Alert>
+                )}
+                
+                <Form onSubmit={handleSubmit}>
+                  <Card className="border-0 bg-light mb-4">
+                    <Card.Body className="p-3">
+                      <h5 className="mb-3">
+                        <i className="bi bi-person-circle me-2"></i>
+                        Personal Information
+                      </h5>
+                      
+                      <Row className="mb-3">
+                        <Col md={12}>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Full Name</Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="name"
+                              value={formData.name}
+                              onChange={handleChange}
+                              required
+                              placeholder="Enter your full name"
+                              className="shadow-sm"
+                            />
+                          </Form.Group>
+                        </Col>
+                        
+                        <Col md={12}>
+                          <Form.Group>
+                            <Form.Label className="fw-bold">Email Address</Form.Label>
+                            <Form.Control
+                              type="email"
+                              name="email"
+                              value={formData.email}
+                              onChange={handleChange}
+                              required
+                              placeholder="Enter your email address"
+                              className="shadow-sm"
+                            />
+                            <Form.Text className="text-muted">
+                              We'll use this email for login and communications
+                            </Form.Text>
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
+                  
+                  <Card className="border-0 bg-light mb-4">
+                    <Card.Body className="p-3">
+                      <h5 className="mb-3">
+                        <i className="bi bi-building me-2"></i>
+                        Hostel Information
+                      </h5>
+                      
+                      <Row className="mb-3">
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Registration Number</Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="regNumber"
+                              value={formData.regNumber}
+                              onChange={handleChange}
+                              required
+                              placeholder="Enter your registration number"
+                              className="shadow-sm"
+                            />
+                          </Form.Group>
+                        </Col>
+                        
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Room Number</Form.Label>
+                            <Form.Control
+                              type="text"
+                              name="roomNumber"
+                              value={formData.roomNumber}
+                              onChange={handleChange}
+                              required
+                              placeholder="Enter your room number"
+                              className="shadow-sm"
+                            />
+                          </Form.Group>
+                        </Col>
+                        
+                        <Col md={12}>
+                          <Form.Group>
+                            <Form.Label className="fw-bold">Contact Number</Form.Label>
+                            <Form.Control
+                              type="tel"
+                              name="contactNumber"
+                              value={formData.contactNumber}
+                              onChange={handleChange}
+                              required
+                              placeholder="Enter your contact number"
+                              className="shadow-sm"
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
+                  
+                  <Card className="border-0 bg-light mb-4">
+                    <Card.Body className="p-3">
+                      <h5 className="mb-3">
+                        <i className="bi bi-shield-lock me-2"></i>
+                        Account Security
+                      </h5>
+                      
+                      <Row>
+                        <Col md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label className="fw-bold">Password</Form.Label>
+                            <Form.Control
+                              type="password"
+                              name="password"
+                              value={formData.password}
+                              onChange={handleChange}
+                              required
+                              placeholder="Create a password"
+                              className="shadow-sm"
+                            />
+                            <Form.Text className="text-muted">
+                              Minimum 6 characters
+                            </Form.Text>
+                          </Form.Group>
+                        </Col>
+                        
+                        <Col md={6}>
+                          <Form.Group>
+                            <Form.Label className="fw-bold">Confirm Password</Form.Label>
+                            <Form.Control
+                              type="password"
+                              name="confirmPassword"
+                              value={formData.confirmPassword}
+                              onChange={handleChange}
+                              required
+                              placeholder="Confirm your password"
+                              className="shadow-sm"
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="regNumber" className="block text-sm font-medium text-gray-700">
-                  Registration Number
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="regNumber"
-                    name="regNumber"
-                    type="text"
-                    required
-                    value={formData.regNumber}
-                    onChange={handleChange}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
+                  <div className="d-grid gap-2 mt-4">
+                    <Button 
+                      variant="primary" 
+                      type="submit" 
+                      size="lg"
+                      className="py-3"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <div className="d-flex align-items-center justify-content-center">
+                          <Spinner animation="border" size="sm" className="me-2" />
+                          Creating account...
+                        </div>
+                      ) : (
+                        <div className="d-flex align-items-center justify-content-center">
+                          <i className="bi bi-person-plus me-2"></i>
+                          Register
+                        </div>
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+                
+                <div className="text-center mt-4">
+                  <p className="mb-0 text-muted">
+                    Already have an account? <Link to="/login" className="fw-bold text-primary text-decoration-none">Login here</Link>
+                  </p>
                 </div>
-              </div>
-
-              <div>
-                <label htmlFor="roomNumber" className="block text-sm font-medium text-gray-700">
-                  Room Number
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="roomNumber"
-                    name="roomNumber"
-                    type="text"
-                    required
-                    value={formData.roomNumber}
-                    onChange={handleChange}
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700">
-                Contact Number
-              </label>
-              <div className="mt-1">
-                <input
-                  id="contactNumber"
-                  name="contactNumber"
-                  type="tel"
-                  required
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                  loading ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
-              >
-                {loading ? 'Registering...' : 'Register'}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Already have an account?
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                to="/login"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-blue-600 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
     </div>
   );
 };

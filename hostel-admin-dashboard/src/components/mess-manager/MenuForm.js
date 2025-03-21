@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { Form, Button, Card, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
 const MenuForm = ({ type, onSubmit }) => {
   const [loading, setLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [menu, setMenu] = useState({
     // For daily menu
     date: new Date().toISOString().split('T')[0],
@@ -72,184 +75,189 @@ const MenuForm = ({ type, onSubmit }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(menu);
+    setSaveLoading(true);
+    try {
+      await onSubmit(menu);
+      setSuccessMessage('Menu saved successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error saving menu:', error);
+    } finally {
+      setSaveLoading(false);
+    }
   };
+
+  const weekdays = [
+    { key: 'monday', label: 'Monday' },
+    { key: 'tuesday', label: 'Tuesday' },
+    { key: 'wednesday', label: 'Wednesday' },
+    { key: 'thursday', label: 'Thursday' },
+    { key: 'friday', label: 'Friday' },
+    { key: 'saturday', label: 'Saturday' },
+    { key: 'sunday', label: 'Sunday' }
+  ];
+
+  const mealTypes = [
+    { key: 'breakfast', label: 'Breakfast', icon: '☕' },
+    { key: 'lunch', label: 'Lunch', icon: '🍚' },
+    { key: 'snacks', label: 'Snacks', icon: '🍪' },
+    { key: 'dinner', label: 'Dinner', icon: '🍽️' }
+  ];
 
   if (loading) {
     return (
-      <div className="text-center py-5">
+      <div className="loading-container">
         <div className="spinner"></div>
-        <p className="mt-3 text-gray-600">Loading menu data...</p>
+        <p className="loading-text">Loading menu data...</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <Form onSubmit={handleSubmit}>
+      {successMessage && (
+        <Alert variant="success" className="d-flex align-items-center">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="me-2"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          {successMessage}
+        </Alert>
+      )}
+      
       {type === 'daily' ? (
-        <div className="space-y-6">
-          <div>
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-              Date
-            </label>
-            <input
-              type="date"
-              name="date"
-              id="date"
-              value={menu.date}
-              onChange={handleDailyInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              required
-            />
-          </div>
-          
-          <div>
-            <label htmlFor="breakfast" className="block text-sm font-medium text-gray-700">
-              Breakfast
-            </label>
-            <textarea
-              name="breakfast"
-              id="breakfast"
-              rows="3"
-              value={menu.breakfast}
-              onChange={handleDailyInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Enter breakfast menu items"
-              required
-            ></textarea>
-          </div>
-          
-          <div>
-            <label htmlFor="lunch" className="block text-sm font-medium text-gray-700">
-              Lunch
-            </label>
-            <textarea
-              name="lunch"
-              id="lunch"
-              rows="3"
-              value={menu.lunch}
-              onChange={handleDailyInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Enter lunch menu items"
-              required
-            ></textarea>
-          </div>
-          
-          <div>
-            <label htmlFor="snacks" className="block text-sm font-medium text-gray-700">
-              Snacks
-            </label>
-            <textarea
-              name="snacks"
-              id="snacks"
-              rows="3"
-              value={menu.snacks}
-              onChange={handleDailyInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Enter snacks menu items"
-              required
-            ></textarea>
-          </div>
-          
-          <div>
-            <label htmlFor="dinner" className="block text-sm font-medium text-gray-700">
-              Dinner
-            </label>
-            <textarea
-              name="dinner"
-              id="dinner"
-              rows="3"
-              value={menu.dinner}
-              onChange={handleDailyInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              placeholder="Enter dinner menu items"
-              required
-            ></textarea>
-          </div>
-        </div>
+        <Card className="shadow-sm border-0 mb-4">
+          <Card.Body>
+            <h5 className="card-title mb-4">Daily Menu</h5>
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-medium">Date</Form.Label>
+              <Form.Control
+                type="date"
+                name="date"
+                value={menu.date}
+                onChange={handleDailyInputChange}
+                className="shadow-sm"
+                required
+              />
+            </Form.Group>
+            
+            {mealTypes.map(meal => (
+              <Form.Group key={meal.key} className="mb-4">
+                <Form.Label className="fw-medium d-flex align-items-center">
+                  <span className="me-2">{meal.icon}</span>
+                  {meal.label}
+                </Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows="3"
+                  name={meal.key}
+                  value={menu[meal.key]}
+                  onChange={handleDailyInputChange}
+                  className="shadow-sm"
+                  placeholder={`Enter ${meal.label.toLowerCase()} menu items...`}
+                  required
+                />
+                <Form.Text className="text-muted">
+                  Enter each item separated by a comma or new line
+                </Form.Text>
+              </Form.Group>
+            ))}
+          </Card.Body>
+        </Card>
       ) : (
-        <div className="space-y-8">
-          {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
-            <div key={day} className="border-t pt-6 first:border-t-0 first:pt-0">
-              <h3 className="text-lg font-medium text-gray-900 capitalize mb-4">{day}</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor={`${day}-breakfast`} className="block text-sm font-medium text-gray-700">
-                    Breakfast
-                  </label>
-                  <textarea
-                    id={`${day}-breakfast`}
-                    rows="2"
-                    value={menu[day].breakfast}
-                    onChange={(e) => handleWeeklyInputChange(day, 'breakfast', e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter breakfast menu items"
-                    required
-                  ></textarea>
-                </div>
-                
-                <div>
-                  <label htmlFor={`${day}-lunch`} className="block text-sm font-medium text-gray-700">
-                    Lunch
-                  </label>
-                  <textarea
-                    id={`${day}-lunch`}
-                    rows="2"
-                    value={menu[day].lunch}
-                    onChange={(e) => handleWeeklyInputChange(day, 'lunch', e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter lunch menu items"
-                    required
-                  ></textarea>
-                </div>
-                
-                <div>
-                  <label htmlFor={`${day}-snacks`} className="block text-sm font-medium text-gray-700">
-                    Snacks
-                  </label>
-                  <textarea
-                    id={`${day}-snacks`}
-                    rows="2"
-                    value={menu[day].snacks}
-                    onChange={(e) => handleWeeklyInputChange(day, 'snacks', e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter snacks menu items"
-                    required
-                  ></textarea>
-                </div>
-                
-                <div>
-                  <label htmlFor={`${day}-dinner`} className="block text-sm font-medium text-gray-700">
-                    Dinner
-                  </label>
-                  <textarea
-                    id={`${day}-dinner`}
-                    rows="2"
-                    value={menu[day].dinner}
-                    onChange={(e) => handleWeeklyInputChange(day, 'dinner', e.target.value)}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter dinner menu items"
-                    required
-                  ></textarea>
-                </div>
-              </div>
-            </div>
+        <div className="mb-4">
+          {weekdays.map((day, index) => (
+            <Card 
+              key={day.key} 
+              className="shadow-sm border-0 mb-4"
+            >
+              <Card.Header className="bg-light py-3 border-0">
+                <h5 className="mb-0 fw-semibold">{day.label}</h5>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  {mealTypes.map(meal => (
+                    <Col md={6} key={`${day.key}-${meal.key}`} className="mb-3">
+                      <Form.Group>
+                        <Form.Label className="fw-medium d-flex align-items-center">
+                          <span className="me-2">{meal.icon}</span>
+                          {meal.label}
+                        </Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows="2"
+                          value={menu[day.key][meal.key]}
+                          onChange={(e) => handleWeeklyInputChange(day.key, meal.key, e.target.value)}
+                          className="shadow-sm"
+                          placeholder={`Enter ${meal.label.toLowerCase()} items...`}
+                          required
+                        />
+                      </Form.Group>
+                    </Col>
+                  ))}
+                </Row>
+              </Card.Body>
+            </Card>
           ))}
         </div>
       )}
       
-      <div className="mt-8">
-        <button
+      <div className="d-flex justify-content-end">
+        <Button
           type="submit"
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          variant="primary"
+          className="d-flex align-items-center"
+          disabled={saveLoading}
         >
-          Save Menu
-        </button>
+          {saveLoading ? (
+            <>
+              <Spinner
+                as="span"
+                animation="border"
+                size="sm"
+                role="status"
+                aria-hidden="true"
+                className="me-2"
+              />
+              Saving...
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="me-2"
+              >
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              Save Menu
+            </>
+          )}
+        </Button>
       </div>
-    </form>
+    </Form>
   );
 };
 

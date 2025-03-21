@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { Card, Badge, Button, Form, Row, Col, Collapse } from 'react-bootstrap';
 import { QRCodeSVG } from 'qrcode.react';
 
 const LeaveRequestCard = ({ request, onApprove, onReject }) => {
+  const [expanded, setExpanded] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [validTillDate, setValidTillDate] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
@@ -44,173 +46,299 @@ const LeaveRequestCard = ({ request, onApprove, onReject }) => {
     return JSON.stringify(qrData);
   };
 
+  // Get status badge class
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'badge-pending';
+      case 'approved':
+        return 'badge-approved';
+      case 'rejected':
+        return 'badge-rejected';
+      default:
+        return 'bg-secondary bg-opacity-10 text-secondary';
+    }
+  };
+
+  // Calculate the number of days between dates
+  const getDaysDifference = (startDate, endDate) => {
+    if (!startDate || !endDate) return null;
+    
+    const start = startDate.toDate ? startDate.toDate() : new Date(startDate);
+    const end = endDate.toDate ? endDate.toDate() : new Date(endDate);
+    
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  };
+
+  const leaveDuration = getDaysDifference(request.checkoutDate, request.returnDate);
+
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
-        <div className="flex items-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Leave Request - {request.studentName}
-          </h3>
-          <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
-            request.status === 'pending' ? 'bg-orange-100 text-orange-800' : 
-            request.status === 'approved' ? 'bg-green-100 text-green-800' : 
-            'bg-red-100 text-red-800'
-          }`}>
+    <Card className="custom-card mb-3 border-0">
+      <Card.Header className="bg-white py-3 d-flex justify-content-between align-items-center">
+        <div className="d-flex align-items-center">
+          <div>
+            <h5 className="mb-0 fw-semibold">
+              {request.studentName}
+            </h5>
+            <p className="text-muted mb-0 small">
+              Room {request.roomNumber} • {request.regNumber}
+            </p>
+          </div>
+        </div>
+        <div className="d-flex align-items-center">
+          <Badge 
+            className={`me-2 ${getStatusBadgeClass(request.status)}`}
+          >
             {request.status}
-          </span>
+          </Badge>
+          
+          <Button 
+            variant="link" 
+            className="text-muted p-0 ms-2"
+            onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </Button>
         </div>
-        <div className="text-sm text-gray-500">
-          Requested: {formatDate(request.createdAt)}
-        </div>
-      </div>
+      </Card.Header>
       
-      <div className="px-4 py-5 sm:p-6">
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Registration Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.regNumber}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Room Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.roomNumber}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Checkout Date</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatDate(request.checkoutDate)}</dd>
-          </div>
-          
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Return Date</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatDate(request.returnDate)}</dd>
-          </div>
-          
-          <div className="sm:col-span-2">
-            <dt className="text-sm font-medium text-gray-500">Reason</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.reason}</dd>
-          </div>
-          
-          {request.status === 'approved' && (
-            <>
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Approved By</dt>
-                <dd className="mt-1 text-sm text-gray-900">{request.approvedBy}</dd>
+      <Collapse in={expanded}>
+        <div>
+          <Card.Body className="pt-0 pb-3">
+            <div className="row mt-3">
+              <div className="col-md-6 col-lg-3 mb-3">
+                <h6 className="text-muted fw-semibold small">CHECKOUT DATE</h6>
+                <p>{formatDate(request.checkoutDate)}</p>
               </div>
               
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Valid Till</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDate(request.validTill)}</dd>
+              <div className="col-md-6 col-lg-3 mb-3">
+                <h6 className="text-muted fw-semibold small">RETURN DATE</h6>
+                <p>{formatDate(request.returnDate)}</p>
               </div>
               
-              <div className="sm:col-span-2">
-                <button
-                  onClick={() => setShowQR(!showQR)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  {showQR ? 'Hide QR Code' : 'Show QR Code'}
-                </button>
-                
-                {showQR && (
-                  <div className="mt-4 flex justify-center">
-                    <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-md">
-                      <QRCodeSVG value={generateQRData()} size={200} />
-                      <p className="mt-2 text-sm text-center text-gray-500">
-                        Scan to verify leave permission
-                      </p>
+              <div className="col-md-6 col-lg-3 mb-3">
+                <h6 className="text-muted fw-semibold small">DURATION</h6>
+                <p>{leaveDuration} day{leaveDuration !== 1 ? 's' : ''}</p>
+              </div>
+              
+              <div className="col-md-6 col-lg-3 mb-3">
+                <h6 className="text-muted fw-semibold small">REQUESTED ON</h6>
+                <p>{formatDate(request.createdAt)}</p>
+              </div>
+              
+              <div className="col-12 mb-3">
+                <h6 className="text-muted fw-semibold small">REASON FOR LEAVE</h6>
+                <Card className="bg-light border-0">
+                  <Card.Body className="py-3">
+                    {request.reason}
+                  </Card.Body>
+                </Card>
+              </div>
+              
+              {request.status === 'approved' && (
+                <div className="col-12">
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <h6 className="text-muted fw-semibold small">APPROVED BY</h6>
+                      <p>{request.approvedBy}</p>
+                    </div>
+                    
+                    <div className="col-md-6 mb-3">
+                      <h6 className="text-muted fw-semibold small">VALID TILL</h6>
+                      <p>{formatDate(request.validTill)}</p>
+                    </div>
+                    
+                    <div className="col-12 mb-3">
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => setShowQR(!showQR)}
+                        className="d-flex align-items-center"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="me-2"
+                        >
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                          <path d="M8 7h.01M7 12h.01M7 17h.01M12 7h.01M12 12h.01M12 17h.01M17 7h.01M17 12h.01M17 17h.01"></path>
+                        </svg>
+                        {showQR ? 'Hide QR Code' : 'Show QR Code'}
+                      </Button>
+                      
+                      <Collapse in={showQR}>
+                        <div>
+                          <div className="mt-3 d-flex justify-content-center">
+                            <div className="p-4 bg-white rounded border shadow-sm text-center">
+                              <QRCodeSVG value={generateQRData()} size={200} />
+                              <p className="mt-3 mb-0 text-center text-muted small">
+                                <span className="d-block fw-semibold mb-1">Leave Permission QR Code</span>
+                                Valid till: {formatDate(request.validTill)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Collapse>
                     </div>
                   </div>
-                )}
-              </div>
-            </>
-          )}
+                </div>
+              )}
+              
+              {request.status === 'rejected' && (
+                <div className="col-12">
+                  <div className="row">
+                    <div className="col-md-6 mb-3">
+                      <h6 className="text-muted fw-semibold small">REJECTED BY</h6>
+                      <p>{request.rejectedBy}</p>
+                    </div>
+                    
+                    <div className="col-md-6 mb-3">
+                      <h6 className="text-muted fw-semibold small">REJECTED ON</h6>
+                      <p>{formatDate(request.rejectedAt)}</p>
+                    </div>
+                    
+                    <div className="col-12 mb-3">
+                      <h6 className="text-muted fw-semibold small">REJECTION REASON</h6>
+                      <Card className="bg-light border-0">
+                        <Card.Body className="py-3">
+                          {request.rejectionReason || 'No reason provided'}
+                        </Card.Body>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card.Body>
           
-          {request.status === 'rejected' && (
-            <>
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Rejected By</dt>
-                <dd className="mt-1 text-sm text-gray-900">{request.rejectedBy}</dd>
-              </div>
-              
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Rejected At</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDate(request.rejectedAt)}</dd>
-              </div>
-              
-              <div className="sm:col-span-2">
-                <dt className="text-sm font-medium text-gray-500">Rejection Reason</dt>
-                <dd className="mt-1 text-sm text-gray-900">{request.rejectionReason || 'No reason provided'}</dd>
-              </div>
-            </>
-          )}
-        </dl>
-      </div>
-      
-      {request.status === 'pending' && (
-        <div className="border-t border-gray-200 px-4 py-4 sm:px-6">
-          {!showRejectForm ? (
-            <div className="flex justify-end space-x-3">
-              <div className="flex items-center space-x-3">
-                <label htmlFor="validTill" className="block text-sm font-medium text-gray-700">
-                  Valid Till:
-                </label>
-                <input
-                  type="date"
-                  id="validTill"
-                  value={validTillDate}
-                  onChange={(e) => setValidTillDate(e.target.value)}
-                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  required
-                />
-                <button
-                  onClick={handleApproveClick}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  Approve
-                </button>
-              </div>
-              
-              <button
-                onClick={() => setShowRejectForm(true)}
-                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-              >
-                Reject
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <label htmlFor="rejectionReason" className="block text-sm font-medium text-gray-700">
-                Rejection Reason:
-              </label>
-              <textarea
-                id="rejectionReason"
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                rows="3"
-                placeholder="Provide a reason for rejection (optional)"
-              ></textarea>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowRejectForm(false)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Cancel
-                </button>
-                
-                <button
-                  onClick={handleRejectClick}
-                  className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Confirm Rejection
-                </button>
-              </div>
-            </div>
+          {request.status === 'pending' && (
+            <Card.Footer className="bg-white border-top py-3">
+              {!showRejectForm ? (
+                <Row className="align-items-center">
+                  <Col xs={12} md={6} className="mb-3 mb-md-0">
+                    <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center">
+                      <Form.Label className="me-sm-3 mb-2 mb-sm-0 fw-medium">Valid Till:</Form.Label>
+                      <Form.Control
+                        type="date"
+                        size="sm"
+                        value={validTillDate}
+                        onChange={(e) => setValidTillDate(e.target.value)}
+                        className="flex-grow-1"
+                        required
+                      />
+                    </div>
+                  </Col>
+                  
+                  <Col xs={12} md={6} className="d-flex justify-content-end">
+                    <Button
+                      variant="success"
+                      size="sm"
+                      className="me-2"
+                      onClick={handleApproveClick}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="me-1"
+                      >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Approve
+                    </Button>
+                    
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => setShowRejectForm(true)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="me-1"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                      Reject
+                    </Button>
+                  </Col>
+                </Row>
+              ) : (
+                <div>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-medium">Rejection Reason:</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Provide a reason for rejection (optional)"
+                    />
+                  </Form.Group>
+                  
+                  <div className="d-flex justify-content-end">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      className="me-2"
+                      onClick={() => setShowRejectForm(false)}
+                    >
+                      Cancel
+                    </Button>
+                    
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={handleRejectClick}
+                    >
+                      Confirm Rejection
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card.Footer>
           )}
         </div>
-      )}
-    </div>
+      </Collapse>
+    </Card>
   );
 };
 
