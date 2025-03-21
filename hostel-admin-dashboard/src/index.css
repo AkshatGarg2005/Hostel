@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Import Bootstrap CSS */
+@import '~bootstrap/dist/css/bootstrap.min.css';
 
 body {
   margin: 0;
@@ -21,7 +20,7 @@ code {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  border-left-color: #3b82f6;
+  border-left-color: #0d6efd;
   animation: spin 1s linear infinite;
   margin: 0 auto;
 }
