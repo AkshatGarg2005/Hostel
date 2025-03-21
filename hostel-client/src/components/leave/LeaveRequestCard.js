@@ -1,150 +1,167 @@
 import React, { useState } from 'react';
+import { Card, Badge, Row, Col, Button, Alert } from 'react-bootstrap';
 import { QRCodeSVG } from 'qrcode.react';
 
 const LeaveRequestCard = ({ request }) => {
   const [showQR, setShowQR] = useState(false);
+  const [qrError, setQrError] = useState('');
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString();
+    try {
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', error, timestamp);
+      return 'Invalid date';
+    }
   };
 
   // Generate QR data for approved requests
   const generateQRData = () => {
-    const qrData = {
-      id: request.id,
-      studentName: request.studentName,
-      regNumber: request.regNumber,
-      roomNumber: request.roomNumber,
-      checkoutDate: formatDate(request.checkoutDate),
-      validTill: formatDate(request.validTill || request.returnDate),
-      reason: request.reason,
-      approvedBy: request.approvedBy || 'N/A',
-      approvedAt: request.approvedAt ? formatDate(request.approvedAt) : 'N/A'
-    };
-    
-    return JSON.stringify(qrData);
+    try {
+      const qrData = {
+        id: request.id,
+        studentName: request.studentName || 'N/A',
+        regNumber: request.regNumber || 'N/A',
+        roomNumber: request.roomNumber || 'N/A',
+        checkoutDate: formatDate(request.checkoutDate),
+        validTill: formatDate(request.validTill || request.returnDate),
+        reason: request.reason || 'N/A',
+        approvedBy: request.approvedBy || 'N/A',
+        approvedAt: request.approvedAt ? formatDate(request.approvedAt) : 'N/A'
+      };
+      
+      console.log('QR Data:', qrData);
+      return JSON.stringify(qrData);
+    } catch (error) {
+      console.error('Error generating QR data:', error);
+      setQrError('Error generating QR code: ' + error.message);
+      return JSON.stringify({ error: 'Failed to generate data' });
+    }
   };
 
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center">
-        <div className="flex items-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Leave Request
-          </h3>
-          <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${
-            request.status === 'pending' ? 'bg-orange-100 text-orange-800' : 
-            request.status === 'approved' ? 'bg-green-100 text-green-800' : 
-            'bg-red-100 text-red-800'
-          }`}>
+    <Card className="mb-4">
+      <Card.Header className="d-flex justify-content-between align-items-center">
+        <div>
+          <h5 className="mb-0">Leave Request</h5>
+          <Badge 
+            bg={
+              request.status === 'pending' ? 'warning' : 
+              request.status === 'approved' ? 'success' : 
+              'danger'
+            }
+          >
             {request.status}
-          </span>
+          </Badge>
         </div>
-        <div className="text-sm text-gray-500">
+        <small className="text-muted">
           Requested: {formatDate(request.createdAt)}
-        </div>
-      </div>
+        </small>
+      </Card.Header>
       
-      <div className="px-4 py-5 sm:p-6">
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Checkout Date</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatDate(request.checkoutDate)}</dd>
-          </div>
+      <Card.Body>
+        <Row>
+          <Col md={6} className="mb-3">
+            <h6>Checkout Date</h6>
+            <p>{formatDate(request.checkoutDate)}</p>
+          </Col>
           
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Return Date</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatDate(request.returnDate)}</dd>
-          </div>
+          <Col md={6} className="mb-3">
+            <h6>Return Date</h6>
+            <p>{formatDate(request.returnDate)}</p>
+          </Col>
           
           {request.status === 'approved' && request.validTill && (
-            <div className="sm:col-span-1">
-              <dt className="text-sm font-medium text-gray-500">Valid Till</dt>
-              <dd className="mt-1 text-sm text-gray-900">{formatDate(request.validTill)}</dd>
-            </div>
+            <Col md={6} className="mb-3">
+              <h6>Valid Till</h6>
+              <p>{formatDate(request.validTill)}</p>
+            </Col>
           )}
           
-          <div className="sm:col-span-1">
-            <dt className="text-sm font-medium text-gray-500">Phone Number</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.phoneNumber}</dd>
-          </div>
+          <Col md={6} className="mb-3">
+            <h6>Phone Number</h6>
+            <p>{request.phoneNumber || 'N/A'}</p>
+          </Col>
           
-          <div className="sm:col-span-2">
-            <dt className="text-sm font-medium text-gray-500">Reason</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.reason}</dd>
-          </div>
+          <Col xs={12} className="mb-3">
+            <h6>Reason</h6>
+            <p>{request.reason}</p>
+          </Col>
           
-          <div className="sm:col-span-2">
-            <dt className="text-sm font-medium text-gray-500">Destination Address</dt>
-            <dd className="mt-1 text-sm text-gray-900">{request.destinationAddress}</dd>
-          </div>
+          <Col xs={12} className="mb-3">
+            <h6>Destination Address</h6>
+            <p>{request.destinationAddress}</p>
+          </Col>
           
           {request.status === 'approved' && (
             <>
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Approved By</dt>
-                <dd className="mt-1 text-sm text-gray-900">{request.approvedBy}</dd>
-              </div>
+              <Col md={6} className="mb-3">
+                <h6>Approved By</h6>
+                <p>{request.approvedBy}</p>
+              </Col>
               
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Approved At</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDate(request.approvedAt)}</dd>
-              </div>
+              <Col md={6} className="mb-3">
+                <h6>Approved At</h6>
+                <p>{formatDate(request.approvedAt)}</p>
+              </Col>
             </>
           )}
           
           {request.status === 'rejected' && (
             <>
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Rejected By</dt>
-                <dd className="mt-1 text-sm text-gray-900">{request.rejectedBy}</dd>
-              </div>
+              <Col md={6} className="mb-3">
+                <h6>Rejected By</h6>
+                <p>{request.rejectedBy}</p>
+              </Col>
               
-              <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Rejected At</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDate(request.rejectedAt)}</dd>
-              </div>
+              <Col md={6} className="mb-3">
+                <h6>Rejected At</h6>
+                <p>{formatDate(request.rejectedAt)}</p>
+              </Col>
               
               {request.rejectionReason && (
-                <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-gray-500">Rejection Reason</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{request.rejectionReason}</dd>
-                </div>
+                <Col xs={12}>
+                  <h6>Rejection Reason</h6>
+                  <p>{request.rejectionReason}</p>
+                </Col>
               )}
             </>
           )}
-        </dl>
+        </Row>
         
         {request.status === 'approved' && (
-          <div className="mt-6">
-            <button
+          <div className="mt-3">
+            <Button
+              variant="primary"
               onClick={() => setShowQR(!showQR)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               {showQR ? 'Hide' : 'Show'} QR Code
-            </button>
+            </Button>
             
-            {showQR && (
-              <div className="mt-4 flex flex-col items-center">
-                <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-md">
+            {qrError && <Alert variant="danger" className="mt-3">{qrError}</Alert>}
+            
+            {showQR && !qrError && (
+              <div className="mt-4 d-flex flex-column align-items-center">
+                <Card className="p-4 border">
                   <QRCodeSVG 
                     value={generateQRData()} 
                     size={200} 
                     level="H"
-                    includeMargin={true}
+                    includeMargin
+                    style={{ width: '100%', height: 'auto', maxWidth: '200px' }}
                   />
-                </div>
-                <p className="mt-2 text-sm text-center text-gray-500">
+                </Card>
+                <p className="mt-2 text-center text-muted">
                   Show this QR code at the hostel gate for verification
                 </p>
               </div>
             )}
           </div>
         )}
-      </div>
-    </div>
+      </Card.Body>
+    </Card>
   );
 };
 

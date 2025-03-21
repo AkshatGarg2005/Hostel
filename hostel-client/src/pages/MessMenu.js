@@ -2,16 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import Navbar from '../components/common/Navbar';
+import { Container, Card, Nav, Spinner, Alert, Row, Col } from 'react-bootstrap';
 
 const MessMenu = () => {
   const [menu, setMenu] = useState(null);
   const [menuType, setMenuType] = useState('daily');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchMenu = async () => {
       try {
         setLoading(true);
+        setError('');
+        console.log('Fetching menu type:', menuType);
         
         const menuQuery = query(
           collection(db, 'messMenu'),
@@ -20,18 +24,60 @@ const MessMenu = () => {
           limit(1)
         );
         
+        console.log('Executing query...');
         const querySnapshot = await getDocs(menuQuery);
+        console.log('Query returned:', querySnapshot.size, 'documents');
         
         if (!querySnapshot.empty) {
-          setMenu({
+          const menuData = {
             id: querySnapshot.docs[0].id,
             ...querySnapshot.docs[0].data()
-          });
+          };
+          console.log('Menu data found:', menuData);
+          setMenu(menuData);
         } else {
+          console.log('No menu data found');
           setMenu(null);
+          
+          // Add sample menu data for demonstration (remove in production)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Adding sample menu for development');
+            if (menuType === 'daily') {
+              setMenu({
+                id: 'sample',
+                type: 'daily',
+                date: new Date().toISOString().split('T')[0],
+                breakfast: 'Sample breakfast - Bread, Eggs, and Fruits',
+                lunch: 'Sample lunch - Rice, Dal, and Vegetables',
+                snacks: 'Sample snacks - Biscuits and Tea',
+                dinner: 'Sample dinner - Roti, Paneer, and Rice',
+                createdAt: new Date()
+              });
+            } else {
+              // Sample weekly menu
+              const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+              const sampleWeeklyMenu = {
+                id: 'sample',
+                type: 'weekly',
+                createdAt: new Date()
+              };
+              
+              daysOfWeek.forEach(day => {
+                sampleWeeklyMenu[day] = {
+                  breakfast: `Sample ${day} breakfast`,
+                  lunch: `Sample ${day} lunch`,
+                  snacks: `Sample ${day} snacks`,
+                  dinner: `Sample ${day} dinner`
+                };
+              });
+              
+              setMenu(sampleWeeklyMenu);
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching menu:', error);
+        setError('Failed to load mess menu: ' + error.message);
       } finally {
         setLoading(false);
       }
@@ -41,121 +87,164 @@ const MessMenu = () => {
   }, [menuType]);
 
   const formatDate = (timestamp) => {
-    if (!timestamp) return '';
+    if (!timestamp) return 'Not available';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleDateString();
   };
 
   const renderDailyMenu = () => {
-    if (!menu) return <p className="text-center text-gray-500">No daily menu available</p>;
+    if (!menu) return <Alert variant="info">No daily menu available. Please check back later.</Alert>;
     
     return (
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Daily Menu for {menu.date || formatDate(menu.createdAt)}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-700 mb-2">Breakfast</h4>
-            <p className="text-gray-600 whitespace-pre-line">{menu.breakfast}</p>
-          </div>
-          <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-700 mb-2">Lunch</h4>
-            <p className="text-gray-600 whitespace-pre-line">{menu.lunch}</p>
-          </div>
-          <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-700 mb-2">Snacks</h4>
-            <p className="text-gray-600 whitespace-pre-line">{menu.snacks}</p>
-          </div>
-          <div className="border rounded-lg p-4">
-            <h4 className="font-medium text-gray-700 mb-2">Dinner</h4>
-            <p className="text-gray-600 whitespace-pre-line">{menu.dinner}</p>
-          </div>
-        </div>
-      </div>
+      <Card>
+        <Card.Header>
+          <h5 className="mb-0">Daily Menu for {menu.date || formatDate(menu.createdAt)}</h5>
+        </Card.Header>
+        <Card.Body>
+          <Row>
+            <Col md={6} className="mb-4">
+              <Card>
+                <Card.Header className="bg-light">Breakfast</Card.Header>
+                <Card.Body>
+                  <div className="menu-content">{menu.breakfast || "Not specified"}</div>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-4">
+              <Card>
+                <Card.Header className="bg-light">Lunch</Card.Header>
+                <Card.Body>
+                  <div className="menu-content">{menu.lunch || "Not specified"}</div>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-4">
+              <Card>
+                <Card.Header className="bg-light">Snacks</Card.Header>
+                <Card.Body>
+                  <div className="menu-content">{menu.snacks || "Not specified"}</div>
+                </Card.Body>
+              </Card>
+            </Col>
+            
+            <Col md={6} className="mb-4">
+              <Card>
+                <Card.Header className="bg-light">Dinner</Card.Header>
+                <Card.Body>
+                  <div className="menu-content">{menu.dinner || "Not specified"}</div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
     );
   };
 
   const renderWeeklyMenu = () => {
-    if (!menu) return <p className="text-center text-gray-500">No weekly menu available</p>;
+    if (!menu) return <Alert variant="info">No weekly menu available. Please check back later.</Alert>;
     
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     
     return (
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Weekly Menu (Last Updated: {formatDate(menu.createdAt)})</h3>
-        
-        {days.map((day) => (
-          <div key={day} className="mb-6 border-b pb-6 last:border-b-0">
-            <h4 className="text-lg font-medium text-gray-800 mb-4 capitalize">{day}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="border rounded-lg p-4">
-                <h5 className="font-medium text-gray-700 mb-2">Breakfast</h5>
-                <p className="text-gray-600 whitespace-pre-line">{menu[day]?.breakfast || 'Not available'}</p>
-              </div>
-              <div className="border rounded-lg p-4">
-                <h5 className="font-medium text-gray-700 mb-2">Lunch</h5>
-                <p className="text-gray-600 whitespace-pre-line">{menu[day]?.lunch || 'Not available'}</p>
-              </div>
-              <div className="border rounded-lg p-4">
-                <h5 className="font-medium text-gray-700 mb-2">Snacks</h5>
-                <p className="text-gray-600 whitespace-pre-line">{menu[day]?.snacks || 'Not available'}</p>
-              </div>
-              <div className="border rounded-lg p-4">
-                <h5 className="font-medium text-gray-700 mb-2">Dinner</h5>
-                <p className="text-gray-600 whitespace-pre-line">{menu[day]?.dinner || 'Not available'}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <Card>
+        <Card.Header>
+          <h5 className="mb-0">Weekly Menu (Last Updated: {formatDate(menu.createdAt)})</h5>
+        </Card.Header>
+        <Card.Body>
+          {days.map((day) => (
+            <Card key={day} className="mb-4">
+              <Card.Header className="bg-light text-capitalize">
+                <h5 className="mb-0">{day}</h5>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={6} className="mb-3">
+                    <h6>Breakfast</h6>
+                    <div className="menu-content">
+                      {menu[day]?.breakfast || "Not specified"}
+                    </div>
+                  </Col>
+                  
+                  <Col md={6} className="mb-3">
+                    <h6>Lunch</h6>
+                    <div className="menu-content">
+                      {menu[day]?.lunch || "Not specified"}
+                    </div>
+                  </Col>
+                  
+                  <Col md={6} className="mb-3">
+                    <h6>Snacks</h6>
+                    <div className="menu-content">
+                      {menu[day]?.snacks || "Not specified"}
+                    </div>
+                  </Col>
+                  
+                  <Col md={6} className="mb-3">
+                    <h6>Dinner</h6>
+                    <div className="menu-content">
+                      {menu[day]?.dinner || "Not specified"}
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          ))}
+        </Card.Body>
+      </Card>
     );
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <>
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-          Mess Menu
-        </h1>
+      <Container className="py-4">
+        <h1 className="mb-4">Mess Menu</h1>
         
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex" aria-label="Tabs">
-              <button
-                onClick={() => setMenuType('daily')}
-                className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                  menuType === 'daily'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Daily Menu
-              </button>
-              <button
-                onClick={() => setMenuType('weekly')}
-                className={`w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm ${
-                  menuType === 'weekly'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Weekly Menu
-              </button>
-            </nav>
-          </div>
-        </div>
+        <Card className="mb-4">
+          <Card.Header>
+            <Nav variant="tabs" className="card-header-tabs">
+              <Nav.Item>
+                <Nav.Link 
+                  active={menuType === 'daily'} 
+                  onClick={() => setMenuType('daily')}
+                >
+                  Daily Menu
+                </Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link 
+                  active={menuType === 'weekly'}
+                  onClick={() => setMenuType('weekly')}
+                >
+                  Weekly Menu
+                </Nav.Link>
+              </Nav.Item>
+            </Nav>
+          </Card.Header>
+        </Card>
+        
+        {error && <Alert variant="danger">{error}</Alert>}
         
         {loading ? (
-          <div className="text-center py-10">
-            <div className="spinner"></div>
-            <p className="mt-3 text-gray-600">Loading menu...</p>
+          <div className="text-center py-5">
+            <Spinner animation="border" variant="primary" />
+            <p className="mt-3">Loading menu...</p>
           </div>
         ) : (
           menuType === 'daily' ? renderDailyMenu() : renderWeeklyMenu()
         )}
-      </div>
-    </div>
+        
+        <style jsx>{`
+          .menu-content {
+            white-space: pre-line;
+          }
+        `}</style>
+      </Container>
+    </>
   );
 };
 
