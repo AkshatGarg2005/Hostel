@@ -99,6 +99,17 @@ const AdminNavbar = () => {
                     Warden
                   </Nav.Link>
                 )}
+                
+                {(userRole === 'admin' || userRole === 'security_manager') && (
+                  <Nav.Link 
+                    as={Link} 
+                    to="/security-manager" 
+                    className={`mx-2 ${isActive('/security-manager') ? 'fw-semibold text-primary' : ''}`}
+                    onClick={() => setExpanded(false)}
+                  >
+                    Security Manager
+                  </Nav.Link>
+                )}
               </>
             )}
           </Nav>

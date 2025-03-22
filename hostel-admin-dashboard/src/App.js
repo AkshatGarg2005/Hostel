@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import ServiceManager from './pages/ServiceManager';
 import MessManager from './pages/MessManager';
 import Warden from './pages/Warden';
+import SecurityManager from './pages/SecurityManager'; // New page for security manager
 
 // Protected route component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -56,6 +57,11 @@ function AppRoutes() {
         <Route path="/warden" element={
           <ProtectedRoute allowedRoles={['admin', 'warden']}>
             <Warden />
+          </ProtectedRoute>
+        } />
+        <Route path="/security-manager" element={
+          <ProtectedRoute allowedRoles={['admin', 'security_manager']}>
+            <SecurityManager />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" />} />

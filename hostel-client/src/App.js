@@ -14,6 +14,7 @@ import LeaveRequest from './pages/LeaveRequest';
 import MyLeaves from './pages/MyLeaves';
 import RoomSwapRequest from './pages/RoomSwapRequest';
 import MySwaps from './pages/MySwaps';
+import Attendance from './pages/Attendance'; // New attendance page
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -84,6 +85,11 @@ function AppRoutes() {
         <Route path="/my-swaps" element={
           <ProtectedRoute>
             <MySwaps />
+          </ProtectedRoute>
+        } />
+        <Route path="/attendance" element={
+          <ProtectedRoute>
+            <Attendance />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" />} />

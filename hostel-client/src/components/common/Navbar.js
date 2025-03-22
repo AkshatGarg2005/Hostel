@@ -192,6 +192,16 @@ const AppNavbar = () => {
                       My Swap Requests
                     </NavDropdown.Item>
                   </NavDropdown>
+                  
+                  <Nav.Link 
+                    as={Link} 
+                    to="/attendance" 
+                    active={isActive('/attendance')}
+                    onClick={closeNavbar}
+                    className="d-flex align-items-center"
+                  >
+                    <i className="bi bi-person-check me-1"></i> Attendance
+                  </Nav.Link>
                 </>
               )}
             </Nav>

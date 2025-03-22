@@ -101,12 +101,12 @@ code {
   color: #92400e;
 }
 
-.badge-resolved, .badge-approved, .badge-completed {
+.badge-resolved, .badge-approved, .badge-completed, .badge-present {
   background-color: #d1fae5;
   color: #065f46;
 }
 
-.badge-rejected {
+.badge-rejected, .badge-absent {
   background-color: #fee2e2;
   color: #b91c1c;
 }
@@ -243,6 +243,67 @@ code {
 .dashboard-card-title {
   font-size: 1rem;
   color: #6b7280;
+}
+
+/* Attendance Specific Styles */
+.status-switch.present .form-check-input:checked {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.status-switch.absent .form-check-input:not(:checked) {
+  background-color: #fff;
+  border-color: var(--danger-color);
+}
+
+.status-switch .form-check-label {
+  font-weight: 500;
+}
+
+.status-switch.present .form-check-label {
+  color: var(--secondary-color);
+}
+
+.status-switch.absent .form-check-label {
+  color: var(--danger-color);
+}
+
+.attendance-summary-card {
+  border-left: 4px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.attendance-summary-card.present {
+  border-left-color: var(--secondary-color);
+}
+
+.attendance-summary-card.absent {
+  border-left-color: var(--danger-color);
+}
+
+.attendance-percentage {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  font-weight: 600;
+}
+
+.attendance-percentage-high {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+}
+
+.attendance-percentage-medium {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #92400e;
+}
+
+.attendance-percentage-low {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #b91c1c;
 }
 
 /* Responsive adjustments */

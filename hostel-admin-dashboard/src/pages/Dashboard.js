@@ -11,7 +11,9 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     serviceRequests: 0,
     messComplaints: 0,
-    leaveRequests: 0
+    leaveRequests: 0,
+    totalStudents: 0,
+    attendanceToday: 0
   });
   const [loading, setLoading] = useState(true);
   const [greetingTime, setGreetingTime] = useState('');
@@ -50,10 +52,33 @@ const Dashboard = () => {
         );
         const leaveSnapshots = await getDocs(leaveRequestsQuery);
         
+        // Get total students count
+        const studentsQuery = query(
+          collection(db, 'students')
+        );
+        const studentsSnapshots = await getDocs(studentsQuery);
+        
+        // Get today's attendance count
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const attendanceQuery = query(
+          collection(db, 'attendance'),
+          where('date', '>=', today),
+          where('date', '<', tomorrow),
+          where('status', '==', 'present')
+        );
+        const attendanceSnapshots = await getDocs(attendanceQuery);
+        
         setStats({
           serviceRequests: serviceSnapshots.size,
           messComplaints: messSnapshots.size,
-          leaveRequests: leaveSnapshots.size
+          leaveRequests: leaveSnapshots.size,
+          totalStudents: studentsSnapshots.size,
+          attendanceToday: attendanceSnapshots.size
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -83,6 +108,35 @@ const Dashboard = () => {
               </div>
               <div>
                 <h3 className="dashboard-card-count">{count}</h3>
+                <p className="dashboard-card-title">{title}</p>
+              </div>
+            </Card.Body>
+          </Card>
+        </Link>
+      </Col>
+    );
+  };
+
+  const AttendanceCard = ({ title, count, total, icon, color, bgColor, linkTo, allowed }) => {
+    if (!allowed) return null;
+    
+    const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+    
+    return (
+      <Col xs={12} md={6} lg={4} className="mb-4">
+        <Link to={linkTo} className="text-decoration-none">
+          <Card className="dashboard-card h-100 border-0">
+            <Card.Body className="d-flex flex-column">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className={`dashboard-card-icon ${bgColor}`}>
+                  {icon}
+                </div>
+                <span className={`status-badge ${percentage >= 70 ? 'badge-approved' : percentage >= 50 ? 'badge-pending' : 'badge-rejected'}`}>
+                  {percentage}%
+                </span>
+              </div>
+              <div>
+                <h3 className="dashboard-card-count">{count} / {total}</h3>
                 <p className="dashboard-card-title">{title}</p>
               </div>
             </Card.Body>
@@ -192,6 +246,35 @@ const Dashboard = () => {
               linkTo="/warden"
               allowed={userRole === 'admin' || userRole === 'warden'}
             />
+            
+            <AttendanceCard
+              title="Today's Attendance"
+              count={stats.attendanceToday}
+              total={stats.totalStudents}
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-info"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              }
+              color="text-info"
+              bgColor="bg-info bg-opacity-10"
+              linkTo="/security-manager"
+              allowed={userRole === 'admin' || userRole === 'security_manager'}
+            />
           </Row>
         )}
         
@@ -282,6 +365,37 @@ const Dashboard = () => {
                         </svg>
                       </div>
                       <span className="fw-medium">Leave Approvals</span>
+                    </Card.Body>
+                  </Card>
+                </Link>
+              </Col>
+            )}
+            
+            {(userRole === 'admin' || userRole === 'security_manager') && (
+              <Col xs={12} sm={6} md={4} lg={3} className="mb-3">
+                <Link to="/security-manager" className="text-decoration-none">
+                  <Card className="custom-card h-100">
+                    <Card.Body className="p-3 d-flex align-items-center">
+                      <div className="bg-info bg-opacity-10 p-2 rounded-circle me-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-info"
+                        >
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                      </div>
+                      <span className="fw-medium">Attendance</span>
                     </Card.Body>
                   </Card>
                 </Link>
