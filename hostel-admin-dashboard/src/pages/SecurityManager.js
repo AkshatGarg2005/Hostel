@@ -27,10 +27,9 @@ const SecurityManager = () => {
     attendanceRate: 0
   });
 
-  // Fetch students
+  // Fetch students - this only needs to be done once
   const fetchStudents = async () => {
     try {
-      setLoading(true);
       const studentsQuery = query(
         collection(db, 'students'),
         orderBy('roomNumber')
@@ -45,23 +44,20 @@ const SecurityManager = () => {
       }));
       
       setStudents(studentsList);
-      setStats(prev => ({
-        ...prev,
-        totalStudents: studentsList.length
-      }));
-      
+      return studentsList;
     } catch (error) {
       console.error('Error fetching students:', error);
       setError('Failed to load students: ' + error.message);
-    } finally {
-      setLoading(false);
+      return [];
     }
   };
 
   // Fetch attendance for a specific date
-  const fetchAttendanceForDate = async (date) => {
+  const fetchAttendanceForDate = async (date, studentsList) => {
     try {
-      setLoading(true);
+      // Use the passed studentsList or the current state
+      const currentStudents = studentsList || students;
+      const totalStudents = currentStudents.length;
       
       // Convert date string to Date objects for query
       const startDate = new Date(date);
@@ -73,8 +69,7 @@ const SecurityManager = () => {
       const attendanceQuery = query(
         collection(db, 'attendance'),
         where('date', '>=', startDate),
-        where('date', '<=', endDate),
-        orderBy('date', 'desc')
+        where('date', '<=', endDate)
       );
       
       const querySnapshot = await getDocs(attendanceQuery);
@@ -83,15 +78,20 @@ const SecurityManager = () => {
         ...doc.data()
       }));
       
-      // Update stats
+      // Count students present
       const presentCount = attendanceList.filter(a => a.status === 'present').length;
-      const absentCount = attendanceList.filter(a => a.status === 'absent').length;
-      const attendanceRate = attendanceList.length > 0 
-        ? (presentCount / attendanceList.length) * 100 
+      
+      // Calculate absent as total - present
+      const absentCount = totalStudents - presentCount;
+      
+      // Calculate attendance rate
+      const attendanceRate = totalStudents > 0 
+        ? (presentCount / totalStudents) * 100 
         : 0;
       
+      // Update the stats
       setStats({
-        totalStudents: students.length,
+        totalStudents,
         presentToday: presentCount,
         absentToday: absentCount,
         attendanceRate: attendanceRate.toFixed(2)
@@ -99,9 +99,9 @@ const SecurityManager = () => {
       
       setAttendance(attendanceList);
       
-      // Pre-populate student attendance status
+      // Pre-populate student attendance status for the attendance form
       if (activeTab === 'take-attendance') {
-        const updatedStudents = students.map(student => {
+        const updatedStudents = currentStudents.map(student => {
           const existingAttendance = attendanceList.find(a => a.userId === student.id);
           return {
             ...student,
@@ -114,25 +114,54 @@ const SecurityManager = () => {
         setStudents(updatedStudents);
       }
       
+      return { attendanceList, totalStudents, presentCount, absentCount };
     } catch (error) {
       console.error('Error fetching attendance:', error);
       setError('Failed to load attendance data: ' + error.message);
-    } finally {
-      setLoading(false);
+      return null;
     }
   };
 
-  // Fetch initial data
+  // Initialize data
   useEffect(() => {
-    fetchStudents();
-  }, []);
-  
-  // Fetch attendance data when date or tab changes
+    const initData = async () => {
+      setLoading(true);
+      try {
+        // First, get all students
+        const studentsList = await fetchStudents();
+        
+        // Then, fetch attendance for today
+        if (studentsList.length > 0) {
+          await fetchAttendanceForDate(dateFilter, studentsList);
+        }
+      } catch (err) {
+        console.error("Error initializing data:", err);
+        setError("Failed to initialize data: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initData();
+  }, []); // Only run once on component mount
+
+  // Handle date or tab changes
   useEffect(() => {
-    if (students.length > 0) {
-      fetchAttendanceForDate(dateFilter);
-    }
-  }, [dateFilter, activeTab, students.length]);
+    const updateData = async () => {
+      if (students.length > 0) {
+        setLoading(true);
+        try {
+          await fetchAttendanceForDate(dateFilter, students);
+        } catch (err) {
+          console.error("Error updating data:", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    updateData();
+  }, [dateFilter, activeTab]); // Only run when date or tab changes
 
   // Handle date change
   const handleDateChange = (e) => {
@@ -197,11 +226,27 @@ const SecurityManager = () => {
       
       await Promise.all(promises);
       
+      // Update stats immediately after saving
+      const totalStudents = students.length;
+      const presentToday = students.filter(student => student.isPresent).length;
+      const absentToday = totalStudents - presentToday;
+      const attendanceRate = totalStudents > 0 
+          ? (presentToday / totalStudents) * 100 
+          : 0;
+          
+      // Update stats state with new values
+      setStats({
+        totalStudents,
+        presentToday,
+        absentToday,
+        attendanceRate: attendanceRate.toFixed(2)
+      });
+      
       setSuccessMessage('Attendance saved successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
       
-      // Refresh data
-      fetchAttendanceForDate(dateFilter);
+      // Refresh attendance data
+      await fetchAttendanceForDate(dateFilter, students);
       
     } catch (error) {
       console.error('Error saving attendance:', error);
@@ -237,6 +282,34 @@ const SecurityManager = () => {
       (record.roomNumber && record.roomNumber.toString().includes(searchLower))
     );
   });
+  
+  // Get implicitly absent students (those without records)
+  const getMissingStudents = () => {
+    if (filter !== 'absent') return [];
+    
+    // Get IDs of students who have attendance records
+    const recordedStudentIds = new Set(attendance.map(record => record.userId));
+    
+    // Find students without records for today (implicitly absent)
+    return students
+      .filter(student => !recordedStudentIds.has(student.id))
+      .map(student => ({
+        id: student.id + '_implicit',
+        userId: student.id,
+        studentName: student.name,
+        regNumber: student.regNumber,
+        roomNumber: student.roomNumber,
+        status: 'absent',
+        notes: 'No attendance record',
+        verifierName: 'System'
+      }))
+      .filter(student => 
+        !searchTerm || 
+        student.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.regNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.roomNumber?.toString().includes(searchTerm)
+      );
+  };
 
   return (
     <div className="page-container fade-in">
@@ -366,7 +439,6 @@ const SecurityManager = () => {
               <Tab eventKey="dashboard" title="Dashboard" />
               <Tab eventKey="take-attendance" title="Take Attendance" />
               <Tab eventKey="view-attendance" title="View Attendance" />
-              <Tab eventKey="reports" title="Reports" />
             </Tabs>
           </Card.Header>
           
@@ -503,34 +575,63 @@ const SecurityManager = () => {
             
             {activeTab === 'view-attendance' && (
               <>
+                <Row className="mb-3 align-items-center">
+                  <Col md={4} className="mb-3 mb-md-0">
+                    <Form.Group className="d-flex align-items-center">
+                      <Form.Label className="me-2 mb-0">Date:</Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={dateFilter}
+                        onChange={handleDateChange}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-auto"
+                      />
+                    </Form.Group>
+                  </Col>
+                  
+                  <Col md={4} className="mb-3 mb-md-0">
+                    <div className="d-flex">
+                      <Button
+                        variant={filter === 'all' ? 'primary' : 'outline-primary'}
+                        size="sm"
+                        className="me-2"
+                        onClick={() => setFilter('all')}
+                      >
+                        All
+                      </Button>
+                      <Button
+                        variant={filter === 'present' ? 'success' : 'outline-success'}
+                        size="sm"
+                        className="me-2"
+                        onClick={() => setFilter('present')}
+                      >
+                        Present
+                      </Button>
+                      <Button
+                        variant={filter === 'absent' ? 'danger' : 'outline-danger'}
+                        size="sm"
+                        onClick={() => setFilter('absent')}
+                      >
+                        Absent
+                      </Button>
+                    </div>
+                  </Col>
+                  
+                  <Col md={4}>
+                    <Form.Control
+                      type="search"
+                      placeholder="Search..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </Col>
+                </Row>
+                
                 <div className="d-flex justify-content-between mb-3">
-                  <div className="d-flex">
-                    <Button
-                      variant={filter === 'all' ? 'primary' : 'outline-primary'}
-                      size="sm"
-                      className="me-2"
-                      onClick={() => setFilter('all')}
-                    >
-                      All
-                    </Button>
-                    <Button
-                      variant={filter === 'present' ? 'success' : 'outline-success'}
-                      size="sm"
-                      className="me-2"
-                      onClick={() => setFilter('present')}
-                    >
-                      Present
-                    </Button>
-                    <Button
-                      variant={filter === 'absent' ? 'danger' : 'outline-danger'}
-                      size="sm"
-                      onClick={() => setFilter('absent')}
-                    >
-                      Absent
-                    </Button>
-                  </div>
-                  <Badge bg="primary" className="d-flex align-items-center py-2 px-3">
-                    {filteredAttendance.length} Records
+                  <Badge bg="primary" className="py-2 px-3">
+                    {filter === 'absent' 
+                      ? (filteredAttendance.length + getMissingStudents().length) 
+                      : filteredAttendance.length} Records
                   </Badge>
                 </div>
                 
@@ -539,7 +640,9 @@ const SecurityManager = () => {
                     <div className="spinner"></div>
                     <p className="mt-2 text-muted">Loading attendance records...</p>
                   </div>
-                ) : filteredAttendance.length === 0 ? (
+                ) : (filter === 'absent' 
+                     ? (filteredAttendance.length + getMissingStudents().length === 0) 
+                     : filteredAttendance.length === 0) ? (
                   <div className="text-center py-4 bg-light rounded">
                     <i className="bi bi-calendar-x display-4 text-muted"></i>
                     <p className="mt-2 text-muted">No attendance records found for this date</p>
@@ -558,20 +661,36 @@ const SecurityManager = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredAttendance.map(record => (
-                          <tr key={record.id}>
-                            <td>{record.roomNumber}</td>
-                            <td>{record.studentName}</td>
-                            <td>{record.regNumber}</td>
-                            <td>
-                              <Badge bg={record.status === 'present' ? 'success' : 'danger'} className="py-2 px-3">
-                                {record.status === 'present' ? 'Present' : 'Absent'}
-                              </Badge>
-                            </td>
-                            <td>{record.notes || '-'}</td>
-                            <td>{record.verifierName}</td>
-                          </tr>
-                        ))}
+                        {filter === 'absent' 
+                          ? [...filteredAttendance, ...getMissingStudents()].map(record => (
+                            <tr key={record.id}>
+                              <td>{record.roomNumber}</td>
+                              <td>{record.studentName}</td>
+                              <td>{record.regNumber}</td>
+                              <td>
+                                <Badge bg='danger' className="py-2 px-3">
+                                  Absent
+                                </Badge>
+                              </td>
+                              <td>{record.notes || '-'}</td>
+                              <td>{record.verifierName}</td>
+                            </tr>
+                          )) 
+                          : filteredAttendance.map(record => (
+                            <tr key={record.id}>
+                              <td>{record.roomNumber}</td>
+                              <td>{record.studentName}</td>
+                              <td>{record.regNumber}</td>
+                              <td>
+                                <Badge bg={record.status === 'present' ? 'success' : 'danger'} className="py-2 px-3">
+                                  {record.status === 'present' ? 'Present' : 'Absent'}
+                                </Badge>
+                              </td>
+                              <td>{record.notes || '-'}</td>
+                              <td>{record.verifierName}</td>
+                            </tr>
+                          ))
+                        }
                       </tbody>
                     </table>
                   </div>
@@ -579,85 +698,7 @@ const SecurityManager = () => {
               </>
             )}
             
-            {activeTab === 'reports' && (
-              <div className="py-3">
-                <h4 className="mb-4">Attendance Reports</h4>
-                
-                <Row>
-                  <Col md={6} className="mb-4">
-                    <Card className="shadow-sm border-0 h-100">
-                      <Card.Body>
-                        <h5 className="card-title mb-3">
-                          <i className="bi bi-calendar-month me-2"></i>
-                          Monthly Attendance Report
-                        </h5>
-                        <p className="text-muted mb-4">
-                          Generate a detailed attendance report for all students for the current month.
-                        </p>
-                        <Button variant="primary">
-                          <i className="bi bi-download me-2"></i>
-                          Generate Report
-                        </Button>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  
-                  <Col md={6} className="mb-4">
-                    <Card className="shadow-sm border-0 h-100">
-                      <Card.Body>
-                        <h5 className="card-title mb-3">
-                          <i className="bi bi-person-badge me-2"></i>
-                          Individual Student Report
-                        </h5>
-                        <p className="text-muted mb-4">
-                          Generate an attendance report for a specific student for any date range.
-                        </p>
-                        <Button variant="primary">
-                          <i className="bi bi-search me-2"></i>
-                          Select Student
-                        </Button>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  
-                  <Col md={6} className="mb-4">
-                    <Card className="shadow-sm border-0 h-100">
-                      <Card.Body>
-                        <h5 className="card-title mb-3">
-                          <i className="bi bi-exclamation-triangle me-2"></i>
-                          Low Attendance Alert
-                        </h5>
-                        <p className="text-muted mb-4">
-                          Generate a list of students with attendance below 75% for the current semester.
-                        </p>
-                        <Button variant="warning">
-                          <i className="bi bi-list-check me-2"></i>
-                          View Students
-                        </Button>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  
-                  <Col md={6} className="mb-4">
-                    <Card className="shadow-sm border-0 h-100">
-                      <Card.Body>
-                        <h5 className="card-title mb-3">
-                          <i className="bi bi-graph-up me-2"></i>
-                          Attendance Analytics
-                        </h5>
-                        <p className="text-muted mb-4">
-                          View charts and analytics for attendance patterns across different periods.
-                        </p>
-                        <Button variant="primary">
-                          <i className="bi bi-bar-chart me-2"></i>
-                          View Analytics
-                        </Button>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
-              </div>
-            )}
+
           </Card.Body>
         </Card>
       </Container>

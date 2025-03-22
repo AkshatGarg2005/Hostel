@@ -13,7 +13,8 @@ const Dashboard = () => {
     messComplaints: 0,
     leaveRequests: 0,
     totalStudents: 0,
-    attendanceToday: 0
+    attendanceToday: 0,
+    attendanceRate: 0
   });
   const [loading, setLoading] = useState(true);
   const [greetingTime, setGreetingTime] = useState('');
@@ -57,6 +58,7 @@ const Dashboard = () => {
           collection(db, 'students')
         );
         const studentsSnapshots = await getDocs(studentsQuery);
+        const totalStudents = studentsSnapshots.size;
         
         // Get today's attendance count
         const today = new Date();
@@ -72,13 +74,24 @@ const Dashboard = () => {
           where('status', '==', 'present')
         );
         const attendanceSnapshots = await getDocs(attendanceQuery);
+        const presentToday = attendanceSnapshots.size;
+        
+        // Calculate absent count correctly
+        const absentToday = totalStudents - presentToday;
+        
+        // Calculate attendance rate correctly - using total students as denominator
+        const attendanceRate = totalStudents > 0 
+          ? (presentToday / totalStudents) * 100 
+          : 0;
         
         setStats({
           serviceRequests: serviceSnapshots.size,
           messComplaints: messSnapshots.size,
           leaveRequests: leaveSnapshots.size,
-          totalStudents: studentsSnapshots.size,
-          attendanceToday: attendanceSnapshots.size
+          totalStudents: totalStudents,
+          attendanceToday: presentToday,
+          absentToday: absentToday,
+          attendanceRate: attendanceRate.toFixed(2)
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -120,7 +133,7 @@ const Dashboard = () => {
   const AttendanceCard = ({ title, count, total, icon, color, bgColor, linkTo, allowed }) => {
     if (!allowed) return null;
     
-    const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
+    const percentage = parseFloat(stats.attendanceRate) || 0;
     
     return (
       <Col xs={12} md={6} lg={4} className="mb-4">

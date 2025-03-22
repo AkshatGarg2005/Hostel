@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Table, Badge, Button } from 'react-bootstrap';
-import { collection, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Link } from 'react-router-dom';
 
@@ -21,10 +21,14 @@ const SecurityDashboard = () => {
       try {
         setLoading(true);
         
-        // Get total number of students
+        // Get all students first to establish the total count
         const studentsQuery = query(collection(db, 'students'));
         const studentsSnapshot = await getDocs(studentsQuery);
-        const totalStudents = studentsSnapshot.size;
+        const allStudents = studentsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        const totalStudents = allStudents.length;
         
         // Get today's date bounds
         const today = new Date();
@@ -44,17 +48,20 @@ const SecurityDashboard = () => {
           ...doc.data()
         }));
         
+        // Count students present today
         const presentToday = todayAttendance.filter(record => record.status === 'present').length;
-        const absentToday = todayAttendance.filter(record => record.status === 'absent').length;
-        const attendanceRate = todayAttendance.length > 0 
-          ? (presentToday / todayAttendance.length) * 100 
+        
+        // Calculate absentToday as the total students minus present students
+        const absentToday = totalStudents - presentToday;
+        
+        // Calculate attendance rate using total students as denominator
+        const attendanceRate = totalStudents > 0 
+          ? (presentToday / totalStudents) * 100 
           : 0;
         
         // Get yesterday's date bounds
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        const dayBeforeYesterday = new Date(yesterday);
-        dayBeforeYesterday.setDate(dayBeforeYesterday.getDate() - 1);
         
         // Get yesterday's attendance
         const yesterdayAttendanceQuery = query(
@@ -68,9 +75,12 @@ const SecurityDashboard = () => {
           ...doc.data()
         }));
         
+        // Count students present yesterday
         const presentYesterday = yesterdayAttendance.filter(record => record.status === 'present').length;
-        const yesterdayAttendanceRate = yesterdayAttendance.length > 0 
-          ? (presentYesterday / yesterdayAttendance.length) * 100 
+        
+        // Calculate yesterday's attendance rate
+        const yesterdayAttendanceRate = totalStudents > 0 
+          ? (presentYesterday / totalStudents) * 100 
           : 0;
         
         // Calculate trend (difference between today and yesterday attendance rates)
@@ -99,8 +109,7 @@ const SecurityDashboard = () => {
         
         setRecentAttendance(recentAttendanceRecords);
         
-        // Get students with low attendance
-        // For this, we need to calculate attendance percentage for each student
+        // Calculate student attendance rates for the past month
         const pastMonth = new Date();
         pastMonth.setMonth(pastMonth.getMonth() - 1);
         
@@ -114,43 +123,49 @@ const SecurityDashboard = () => {
           ...doc.data()
         }));
         
-        // Group by student
-        const studentAttendance = {};
+        // Find all unique days in the attendance data
+        const uniqueDays = new Set();
         pastMonthAttendance.forEach(record => {
-          if (!studentAttendance[record.userId]) {
-            studentAttendance[record.userId] = {
-              userId: record.userId,
-              studentName: record.studentName,
-              regNumber: record.regNumber,
-              roomNumber: record.roomNumber,
-              totalDays: 0,
-              presentDays: 0,
-              percentage: 0
-            };
+          if (record.date) {
+            const dateStr = record.date.toDate().toDateString();
+            uniqueDays.add(dateStr);
           }
-          
-          studentAttendance[record.userId].totalDays++;
-          if (record.status === 'present') {
+        });
+        const totalDaysAttendanceTaken = uniqueDays.size;
+        
+        // Initialize attendance data for all students
+        const studentAttendance = {};
+        allStudents.forEach(student => {
+          studentAttendance[student.id] = {
+            userId: student.id,
+            studentName: student.name,
+            regNumber: student.regNumber,
+            roomNumber: student.roomNumber,
+            totalDays: totalDaysAttendanceTaken,
+            presentDays: 0,
+            percentage: 0
+          };
+        });
+        
+        // Count present days for each student
+        pastMonthAttendance.forEach(record => {
+          if (record.userId && record.status === 'present' && studentAttendance[record.userId]) {
             studentAttendance[record.userId].presentDays++;
           }
         });
         
-        // Calculate percentage and filter low attendance students
-        const lowAttendanceThreshold = 75; // Below 75% is considered low
-        const lowAttendanceList = [];
-        
+        // Calculate percentage for each student
         Object.values(studentAttendance).forEach(student => {
           student.percentage = student.totalDays > 0 
             ? (student.presentDays / student.totalDays) * 100 
             : 0;
-          
-          if (student.percentage < lowAttendanceThreshold && student.totalDays >= 5) {
-            lowAttendanceList.push(student);
-          }
         });
         
-        // Sort by attendance percentage (ascending)
-        lowAttendanceList.sort((a, b) => a.percentage - b.percentage);
+        // Find students with low attendance
+        const lowAttendanceThreshold = 75; // Below 75% is considered low
+        const lowAttendanceList = Object.values(studentAttendance)
+          .filter(student => student.percentage < lowAttendanceThreshold && student.totalDays >= 5)
+          .sort((a, b) => a.percentage - b.percentage); // Sort ascending by percentage
         
         setLowAttendanceStudents(lowAttendanceList.slice(0, 5)); // Get top 5 lowest
         
